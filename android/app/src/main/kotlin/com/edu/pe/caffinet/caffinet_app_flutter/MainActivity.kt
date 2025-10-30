@@ -1,0 +1,5 @@
+package com.edu.pe.caffinet.caffinet_app_flutter
+
+import io.flutter.embedding.android.FlutterActivity
+
+class MainActivity : FlutterActivity()

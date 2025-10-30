@@ -1,0 +1,18 @@
+{
+  "folder-path-color.folders": [
+    // 👁️ Views
+    { "path": "lib/presentation/view/discover", "color": "cyan", "symbol": "🧭", "tooltip": "Discover view" },
+    { "path": "lib/presentation/view/guide", "color": "cyan", "symbol": "🧑‍🏫", "tooltip": "Guide view" },
+    { "path": "lib/presentation/view/iam", "color": "cyan", "symbol": "🙋", "tooltip": "IAM view" },
+    { "path": "lib/presentation/view/search", "color": "cyan", "symbol": "🔍", "tooltip": "Search view" },
+
+    // 🧠 ViewModels (reflejo, pero con distinto color e ícono)
+    { "path": "lib/presentation/viewmodel/discover", "color": "blue", "symbol": "🧭", "tooltip": "Discover VM" },
+    { "path": "lib/presentation/viewmodel/guide", "color": "blue", "symbol": "📘", "tooltip": "Guide VM" },
+    { "path": "lib/presentation/viewmodel/iam", "color": "blue", "symbol": "🙋‍♂️", "tooltip": "IAM VM" },
+    { "path": "lib/presentation/viewmodel/search", "color": "blue", "symbol": "🔎", "tooltip": "Search VM" },
+
+    // 🚀 Entry point
+    { "path": "lib/main.dart", "color": "black", "symbol": "🚀", "tooltip": "App entry point" }
+  ]
+}
