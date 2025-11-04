@@ -1,4 +1,4 @@
-import 'package:caffinet_app_flutter/presentation/navigation/navigation.dart';
+import 'package:caffinet_app_flutter/core/navigation/navigation.dart';
 import 'package:flutter/material.dart';
 
 void main() {
