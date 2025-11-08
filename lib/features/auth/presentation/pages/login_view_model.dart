@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../../core/di/injector.dart';
-import '../../domain/usecases/login_user.dart';
+import '../../domain/usecases/login_user.dart'; // Asegúrate de que esta importación trae LoginUserUseCase y LoginParams
 
 /// ViewModel que maneja la lógica y el estado de la pantalla de inicio de sesión.
 class LoginViewModel extends ChangeNotifier {
@@ -43,19 +43,21 @@ class LoginViewModel extends ChangeNotifier {
     notifyListeners();
 
     try {
-      // 3. Ejecutar el UseCase (interacción con el dominio/API)
-      final user = await _loginUserUseCase.execute(
-        emailController.text,
-        passwordController.text,
+      // 3. Ejecutar el UseCase: CORRECCIÓN AQUÍ
+      // Se crea y pasa el objeto LoginParams, resolviendo el error de tipos.
+      final params = LoginParams(
+        email: emailController.text,
+        password: passwordController.text,
       );
+      
+      final user = await _loginUserUseCase.execute(params);
       
       // Aquí podrías guardar la sesión del usuario 'user' si fuera necesario.
       print("Inicio de sesión exitoso para: ${user.email}");
       
       return true;
     } catch (e) {
-      // 4. Manejo de errores (por ejemplo, credenciales incorrectas o problemas de red)
-      // Usamos e.toString() para obtener mensajes específicos de la API si están disponibles.
+      // 4. Manejo de errores 
       passwordError = 'Inicio de sesión fallido: ${e.toString()}';
       return false;
     } finally {

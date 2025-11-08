@@ -1,12 +1,9 @@
-// lib/features/auth/data/models/user_model.dart
 
 import '../../domain/entities/user.dart';
 
-/// Modelo de datos que maneja la serialización y deserialización
-/// de los datos del usuario entre el backend y la aplicación.
 class UserModel {
   final String id;
-  final String name;
+  final String name; 
   final String email;
 
   const UserModel({
@@ -15,14 +12,29 @@ class UserModel {
     required this.email,
   });
 
-  /// Factory constructor para crear un UserModel a partir de un mapa JSON.
+  // Constructor general (asume que el backend devuelve todo, usado en Login)
   factory UserModel.fromJson(Map<String, dynamic> json) {
-    // Asegúrate de que las claves ('id', 'name', 'email') 
-    // coincidan exactamente con la respuesta JSON de tu backend.
+    // Esto podría fallar si 'nombre' no viene.
     return UserModel(
-      id: json['id'] as String,
-      name: json['name'] as String,
+      id: json['id'] != null ? json['id'].toString() : '0', 
+      name: (json['nombre'] as String?) ?? '', // Hacemos 'nombre' opcional
       email: json['email'] as String,
+    );
+  }
+  
+  // 🚨 CONSTRUCTOR ESPECÍFICO PARA REGISTRO
+  // Usa la respuesta parcial del backend (solo ID y Email) y el nombre que enviamos.
+  factory UserModel.fromRegistrationResponse({
+    required Map<String, dynamic> json,
+    required String suppliedName,
+  }) {
+    final idString = json['id'] != null ? json['id'].toString() : '0';
+    final emailString = (json['email'] as String?) ?? '';
+
+    return UserModel(
+      id: idString,
+      name: suppliedName, // <--- Usamos el nombre que ENVIAMOS
+      email: emailString,
     );
   }
 

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../../core/di/injector.dart'; 
-import '../../domain/usecases/register_user.dart';
+import '../../domain/usecases/register_user.dart'; // Asegúrate de importar RegisterUserUseCase y RegisterParams
 
 /// ViewModel que maneja la lógica y el estado de la pantalla de registro.
 class RegisterViewModel extends ChangeNotifier {
@@ -48,12 +48,15 @@ class RegisterViewModel extends ChangeNotifier {
     notifyListeners();
 
     try {
-      // 3. Ejecutar el UseCase (interacción con el dominio/API)
-      final user = await _registerUserUseCase.execute(
-        nameController.text,
-        emailController.text,
-        passwordController.text,
+      // 3. Ejecutar el UseCase: CORRECCIÓN AQUÍ
+      // Se crea y pasa el objeto RegisterParams, resolviendo el error de tipos.
+      final params = RegisterParams(
+        name: nameController.text,
+        email: emailController.text,
+        password: passwordController.text,
       );
+      
+      final user = await _registerUserUseCase.execute(params);
       
       // Aquí podrías manejar la respuesta, como guardar la sesión.
       print("Registro exitoso para el usuario: ${user.name}");
@@ -61,7 +64,6 @@ class RegisterViewModel extends ChangeNotifier {
       return true;
     } catch (e) {
       // 4. Manejo de errores (por ejemplo, usuario ya existe o problemas de red)
-      // Usamos e.toString() para obtener mensajes específicos de la API si están disponibles.
       passwordError = 'Registro fallido: ${e.toString()}'; 
       return false;
     } finally {

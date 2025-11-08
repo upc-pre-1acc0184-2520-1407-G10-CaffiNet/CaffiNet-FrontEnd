@@ -1,18 +1,36 @@
-// lib/features/auth/domain/usecases/register_user.dart (Modificación)
+import 'package:caffinet_app_flutter/features/auth/domain/usecases/usecase.dart';
+
 import '../entities/user.dart';
 import '../repositories/auth_repository.dart';
 
-// Asumo que tienes una clase UseCase base. Si no, omítela.
-// abstract class UseCase<Type, Params> { Future<Type> call(Params params); }
+/// Clase que encapsula la lógica para registrar un nuevo usuario.
+/// Recibe name, email y password, y devuelve la entidad User.
+class RegisterUserUseCase implements UseCase<User, RegisterParams> {
+  final AuthRepository repository;
 
-class RegisterUserUseCase { // Ya no extiende UseCase
-  final AuthRepository repository; // Recibe la interfaz
-
+  // El UseCase solo conoce la abstracción (AuthRepository)
   RegisterUserUseCase(this.repository);
 
-  // El método 'execute' es tu implementación de 'call'
-  Future<User> execute(String name, String email, String password) async {
-    // La lógica de negocio mínima si fuera necesaria
-    return await repository.registerUser(name, email, password);
+  // Implementa el método execute de la clase base UseCase
+  @override
+  Future<User> execute(RegisterParams params) async {
+    return await repository.registerUser(
+      params.name,
+      params.email,
+      params.password,
+    );
   }
+}
+
+/// Parámetros necesarios para el RegisterUserUseCase.
+class RegisterParams {
+  final String name;
+  final String email;
+  final String password;
+
+  RegisterParams({
+    required this.name,
+    required this.email,
+    required this.password,
+  });
 }

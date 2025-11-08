@@ -1,4 +1,4 @@
-import 'package:caffinet_app_flutter/core/di/injector.dart';
+import 'package:caffinet_app_flutter/features/home/presentation/pages/homePage_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:persistent_bottom_nav_bar/persistent_bottom_nav_bar.dart';
 
@@ -20,7 +20,7 @@ class _MainPageState extends State<MainPage> {
 
   List<Widget> _buildScreens() {
     return const [
-      HomePageScreen(viewModel: sl<HomeViewModel>()), 
+      HomePageScreen(), 
       Scaffold(body: Center(child: Text('Search Page'))),
       Scaffold(body: Center(child: Text('Guide Page'))),
       Scaffold(body: Center(child: Text('Discover Page'))),
