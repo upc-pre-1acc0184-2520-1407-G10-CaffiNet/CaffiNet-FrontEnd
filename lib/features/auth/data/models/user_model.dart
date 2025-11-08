@@ -1,27 +1,37 @@
-import 'package:caffinet_app_flutter/features/auth/domain/entities/user.dart';
+// lib/features/auth/data/models/user_model.dart
 
-class UserModel extends User {
+import '../../domain/entities/user.dart';
+
+/// Modelo de datos que maneja la serialización y deserialización
+/// de los datos del usuario entre el backend y la aplicación.
+class UserModel {
+  final String id;
+  final String name;
+  final String email;
+
   const UserModel({
-    required super.id,
-    required super.name,
-    required super.email,
-    super.avatarUrl,
+    required this.id,
+    required this.name,
+    required this.email,
   });
 
+  /// Factory constructor para crear un UserModel a partir de un mapa JSON.
   factory UserModel.fromJson(Map<String, dynamic> json) {
+    // Asegúrate de que las claves ('id', 'name', 'email') 
+    // coincidan exactamente con la respuesta JSON de tu backend.
     return UserModel(
-      id: json['id'].toString(),
-      name: json['name'] ?? '',
-      email: json['email'] ?? '',
-      avatarUrl: json['avatarUrl'],
+      id: json['id'] as String,
+      name: json['name'] as String,
+      email: json['email'] as String,
     );
   }
 
-  Map<String, dynamic> toJson() {
-    return {
-      'id': id,
-      'name': name,
-      'email': email
-    };
+  /// Convierte el Modelo de Datos a la Entidad de Dominio.
+  User toEntity() {
+    return User(
+      id: id,
+      name: name,
+      email: email,
+    );
   }
 }
