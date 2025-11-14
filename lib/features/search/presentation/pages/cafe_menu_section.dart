@@ -2,11 +2,11 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 
-/// Cambia este baseUrl si usas otro host (por ahora dejo el de Swagger)
+
 const String _baseUrl = 'http://127.0.0.1:8000';
 
 class CafeMenuSection extends StatefulWidget {
-  /// En tu modelo `SearchResult` el id es String
+  
   final String cafeteriaId;
 
   const CafeMenuSection({
@@ -34,7 +34,7 @@ class _CafeMenuSectionState extends State<CafeMenuSection> {
   bool _showProducts = true;
 
   Future<void> _onTogglePressed() async {
-    // Solo cargamos la carta la primera vez que se abre
+    
     if (!_isOpen && _beverages.isEmpty && _products.isEmpty) {
       await _loadMenu();
     }
@@ -186,7 +186,7 @@ class _CafeMenuSectionState extends State<CafeMenuSection> {
         ),
         const SizedBox(height: 8),
 
-        // Chips tipo "Pet-friendly" pero solo Bebidas / Productos
+        // Etiquetas solo Bebidas / Productos
         Wrap(
           spacing: 8,
           children: [
@@ -251,7 +251,7 @@ class _CafeMenuSectionState extends State<CafeMenuSection> {
   }
 }
 
-/// ===================== MODELOS =====================
+/// MODELOS 
 
 double _parsePrice(dynamic raw) {
   if (raw == null) return 0;
@@ -310,7 +310,7 @@ class _ProductItem {
   }
 }
 
-/// ===================== CARD (DISEÑO TIPO SEARCH RESULT) =====================
+/// CARD 
 
 class _MenuCard extends StatelessWidget {
   final String title;
