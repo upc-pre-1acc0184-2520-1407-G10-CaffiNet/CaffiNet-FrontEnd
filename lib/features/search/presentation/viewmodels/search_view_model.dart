@@ -1,18 +1,23 @@
 import 'dart:math';
 import 'package:flutter/foundation.dart';
 import '../../models/search_models.dart';
+import '../../service/search_service.dart';
 
 class SearchViewModel extends ChangeNotifier {
-  
+  final SearchService _searchService = SearchService();
+
   SearchFilters _filters = const SearchFilters();
   SortBy _sortBy = SortBy.rating;
-  final List<SearchResult> _all = _mockData; 
+
+  // Lista completa traída del backend
+  final List<SearchResult> _all = [];
+
+ 
   List<SearchResult> _page = [];
   bool _isSearching = false;
   int _nextIndex = 0;
   static const int _pageSize = 3;
 
-  
   SearchFilters get filters => _filters;
   SortBy get sortBy => _sortBy;
   bool get isSearching => _isSearching;
@@ -20,7 +25,31 @@ class SearchViewModel extends ChangeNotifier {
   int get totalFound => _filtered.length;
   bool get canLoadMore => _nextIndex < _filtered.length;
 
-  
+  //  CARGAR DESDE BACKEND 
+  Future<void> loadCafeterias() async {
+    _isSearching = true;
+    notifyListeners();
+    try {
+      final List<SearchResult> response =
+          await _searchService.getCafeterias(); 
+
+      _all
+        ..clear()
+        ..addAll(response);
+
+      await search();
+    } catch (e, st) {
+      if (kDebugMode) {
+        print('Error en loadCafeterias: $e\n$st');
+      }
+      throw Exception('Failed to load cafeterias');
+    } finally {
+      _isSearching = false;
+      notifyListeners();
+    }
+  }
+
+  //  LÓGICA DE BÚSQUEDA 
   void onQueryChanged(String q) {
     _filters = _filters.copyWith(query: q);
     _resetAndSearch();
@@ -41,7 +70,7 @@ class SearchViewModel extends ChangeNotifier {
   Future<void> search() async {
     _isSearching = true;
     notifyListeners();
-    await Future.delayed(const Duration(milliseconds: 300)); 
+    await Future.delayed(const Duration(milliseconds: 300));
     _page = _filtered.take(_pageSize).toList();
     _nextIndex = _page.length;
     _isSearching = false;
@@ -68,24 +97,57 @@ class SearchViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
-  
   void _resetAndSearch() {
     _page = [];
     _nextIndex = 0;
     search();
   }
 
+  //  FILTRO (texto + tags)
   List<SearchResult> get _filtered {
     final q = _filters.query.trim().toLowerCase();
+
+    bool _matchesTags(SearchResult r, Set<String> selected) {
+      if (selected.isEmpty) return true;
+
+      for (final tag in selected) {
+        switch (tag) {
+          case 'Pet-friendly':
+            if (!r.petFriendly) return false;
+            break;
+          case 'Free Wi-Fi':
+            if (!r.hasWifi) return false;
+            break;
+          case 'Reservations':
+            if (!r.hasReservations) return false;
+            break;
+          case 'Parking Available':
+            if (!r.hasParking) return false;
+            break;
+          case 'Music':
+            if (!r.hasMusic) return false;
+            break;
+          default:
+            
+            if (!r.tags.contains(tag)) return false;
+        }
+      }
+      return true;
+    }
+
     final filtered = _all.where((r) {
+      // Filtro por texto (nombre o dirección)
       final byText = q.isEmpty ||
           r.name.toLowerCase().contains(q) ||
           r.address.toLowerCase().contains(q);
-      final byTags = _filters.selectedTags.isEmpty ||
-          _filters.selectedTags.every((t) => r.tags.contains(t));
+
+      // Filtro por tags seleccionados
+      final byTags = _matchesTags(r, _filters.selectedTags);
+
       return byText && byTags;
     }).toList();
 
+    // Ordenamiento
     filtered.sort((a, b) {
       switch (_sortBy) {
         case SortBy.rating:
@@ -100,55 +162,11 @@ class SearchViewModel extends ChangeNotifier {
     return filtered;
   }
 
- 
-  static const List<SearchResult> _mockData = [
-    SearchResult(
-      id: '1',
-      name: 'Cafe Maria',
-      address: 'Av. Central 123',
-      rating: 2.7,
-      ratingCount: 127,
-      distanceMi: 0.5,
-      tags: ['Music', 'Free Wi-Fi', 'Pet-friendly', 'Wide', 'Traditional'],
-      status: OpenStatus.open,
-      tier: CafeTier.bronze,
-      thumbnail: 'https://images.unsplash.com/photo-1498804103079-a6351b050096?q=80&w=300',
-    ),
-    SearchResult(
-      id: '2',
-      name: 'Cafe de Lima',
-      address: 'Los Olivos',
-      rating: 4.7,
-      ratingCount: 156,
-      distanceMi: 0.5,
-      tags: ['Music', 'Gourmet', 'Reservations', 'Pet-friendly'],
-      status: OpenStatus.open,
-      tier: CafeTier.silver,
-      thumbnail: 'https://images.unsplash.com/photo-1504754524776-8f4f37790ca0?q=80&w=300',
-    ),
-    SearchResult(
-      id: '3',
-      name: 'Puku Puku Narciso',
-      address: 'Miraflores',
-      rating: 4.9,
-      ratingCount: 1560,
-      distanceMi: 0.5,
-      tags: ['Free Wi-Fi', 'Specialty', 'Reservations', 'Parking Available'],
-      status: OpenStatus.open,
-      tier: CafeTier.gold,
-      thumbnail: 'https://images.unsplash.com/photo-1461988091159-192b6df7054f?q=80&w=300',
-    ),
-    SearchResult(
-      id: '4',
-      name: 'Le Cafe Swissôtel Lima',
-      address: 'San Isidro',
-      rating: 4.3,
-      ratingCount: 1560,
-      distanceMi: 0.5,
-      tags: ['Reservations', 'Parking Available'],
-      status: OpenStatus.closed, 
-      tier: CafeTier.gold,
-      thumbnail: 'https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?q=80&w=300',
-    ),
-  ];
+  //  MÉTODOS PARA DETALLE 
+
+  Future<CafeteriaSchedule?> getCafeteriaHorario(String id) =>
+      _searchService.getCafeteriaHorario(id);
+
+  Future<List<dynamic>> getCafeteriaCalificaciones(String id) =>
+      _searchService.getCafeteriaCalificaciones(id);
 }

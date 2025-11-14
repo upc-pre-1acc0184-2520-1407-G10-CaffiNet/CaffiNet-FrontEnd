@@ -6,6 +6,7 @@ import '../widgets/search_input.dart';
 import '../widgets/filter_chip_row.dart';
 import '../widgets/result_list_item.dart';
 import '../widgets/empty_state.dart';
+import 'cafe_detail_page.dart'; 
 
 class SearchPageScreen extends StatelessWidget {
   const SearchPageScreen({super.key});
@@ -13,7 +14,9 @@ class SearchPageScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider(
-      create: (_) => SearchViewModel()..search(),
+      
+      
+      create: (_) => SearchViewModel()..loadCafeterias(),
       child: Scaffold(
         appBar: AppBar(
           title: const Text('Search Results'),
@@ -31,63 +34,106 @@ class SearchPageScreen extends StatelessWidget {
             return Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                
                 Padding(
                   padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
                   child: SearchInput(
                     value: vm.filters.query,
                     onChanged: vm.onQueryChanged,
                     onSubmitted: (_) => vm.search(),
-                    onClear: vm.clear,
+                    onClear: () {
+                      vm.clear();
+                      vm.search(); 
+                    },
                   ),
                 ),
-                
+
                 Padding(
                   padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
                   child: Row(
                     children: [
                       Text(
-                        '${vm.totalFound} coffeShop found',
+                        '${vm.totalFound} coffeeShop found',
                         style: Theme.of(context).textTheme.bodyMedium,
                       ),
                       const Spacer(),
-                      Text('Sort by: ', style: Theme.of(context).textTheme.bodyMedium),
+                      Text(
+                        'Sort by: ',
+                        style: Theme.of(context).textTheme.bodyMedium,
+                      ),
                       DropdownButton<SortBy>(
                         value: vm.sortBy,
                         underline: const SizedBox.shrink(),
                         items: const [
-                          DropdownMenuItem(value: SortBy.rating, child: Text('Rating')),
-                          DropdownMenuItem(value: SortBy.distance, child: Text('Distance')),
-                          DropdownMenuItem(value: SortBy.name, child: Text('Name')),
+                          DropdownMenuItem(
+                              value: SortBy.rating, child: Text('Rating')),
+                          DropdownMenuItem(
+                              value: SortBy.distance, child: Text('Distance')),
+                          DropdownMenuItem(
+                              value: SortBy.name, child: Text('Name')),
                         ],
                         onChanged: (s) => vm.setSort(s ?? SortBy.rating),
                       ),
                     ],
                   ),
                 ),
-                
+
                 Padding(
                   padding: const EdgeInsets.only(left: 12, bottom: 8),
                   child: FilterChipRow(
                     tags: const [
-                      'Pet-friendly','Free Wi-Fi','Reservations',
-                      'Gourmet','Parking Available','Music'
+                      'Pet-friendly',
+                      'Free Wi-Fi',
+                      'Reservations',
+                      'Gourmet',
+                      'Parking Available',
+                      'Music'
                     ],
                     selected: vm.filters.selectedTags.toList(),
                     onTap: (t) => vm.toggleTag(t),
                   ),
                 ),
                 if (vm.isSearching) const LinearProgressIndicator(),
+
                 Expanded(
                   child: vm.results.isEmpty
-                      ? const EmptyState(message: 'Busca cafeterías por nombre, dirección o tag.')
+                      ? const EmptyState(
+                          message:
+                              'Busca cafeterías por nombre, dirección o tag.',
+                        )
                       : ListView.separated(
                           padding: const EdgeInsets.all(12),
-                          itemCount: vm.results.length + (vm.canLoadMore ? 1 : 0),
-                          separatorBuilder: (_, __) => const SizedBox(height: 10),
+                          itemCount:
+                              vm.results.length + (vm.canLoadMore ? 1 : 0),
+                          separatorBuilder: (_, __) =>
+                              const SizedBox(height: 10),
                           itemBuilder: (context, i) {
                             if (i < vm.results.length) {
-                              return ResultListItem(result: vm.results[i]);
+                              return ResultListItem(
+                                result: vm.results[i],
+                                onTap: () async {
+                                  final cafeteriaId = vm.results[i].id;
+
+                                  // Detalles desde el backend
+                                  final horario =
+                                      await vm.getCafeteriaHorario(
+                                          cafeteriaId);
+                                  final calificaciones =
+                                      await vm.getCafeteriaCalificaciones(
+                                          cafeteriaId);
+
+                                 
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) => CafeDetailPage(
+                                        result: vm.results[i],
+                                        horario: horario,
+                                        calificaciones: calificaciones,
+                                      ),
+                                    ),
+                                  );
+                                },
+                              );
                             }
                             return Center(
                               child: TextButton(
@@ -109,21 +155,39 @@ class SearchPageScreen extends StatelessWidget {
   void _openFilters(BuildContext context) {
     final vm = context.read<SearchViewModel>();
     final allTags = const [
-      
-      'Pet Friendly','Enchufes','Wifi','Terraza',
-      'alegre','calmada','sin musica',
-      'Tenue','cálida','brillante',
-      'minimalista','rustico','vintage',
-      'artistico','industrial','moderno',
-      'Reservations','Gourmet','Parking Available','Free Wi-Fi',
-      'Music','Specialty','Wide','Traditional','Pet-friendly'
+      'Pet Friendly',
+      'Enchufes',
+      'Wifi',
+      'Terraza',
+      'alegre',
+      'calmada',
+      'sin musica',
+      'Tenue',
+      'cálida',
+      'brillante',
+      'minimalista',
+      'rustico',
+      'vintage',
+      'artistico',
+      'industrial',
+      'moderno',
+      'Reservations',
+      'Gourmet',
+      'Parking Available',
+      'Free Wi-Fi',
+      'Music',
+      'Specialty',
+      'Wide',
+      'Traditional',
+      'Pet-friendly'
     ];
 
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(16))),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
       builder: (_) {
         final selected = Set<String>.from(vm.filters.selectedTags);
         return Padding(
@@ -134,7 +198,8 @@ class SearchPageScreen extends StatelessWidget {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Container(
-                    width: 40, height: 4,
+                    width: 40,
+                    height: 4,
                     decoration: BoxDecoration(
                       color: Colors.grey.shade300,
                       borderRadius: BorderRadius.circular(2),
@@ -143,11 +208,15 @@ class SearchPageScreen extends StatelessWidget {
                   const SizedBox(height: 16),
                   Align(
                     alignment: Alignment.centerLeft,
-                    child: Text('Filters', style: Theme.of(context).textTheme.titleMedium),
+                    child: Text(
+                      'Filters',
+                      style: Theme.of(context).textTheme.titleMedium,
+                    ),
                   ),
                   const SizedBox(height: 12),
                   Wrap(
-                    spacing: 8, runSpacing: 8,
+                    spacing: 8,
+                    runSpacing: 8,
                     children: allTags.map((t) {
                       final sel = selected.contains(t);
                       return FilterChip(
@@ -166,12 +235,13 @@ class SearchPageScreen extends StatelessWidget {
                     width: double.infinity,
                     child: FilledButton(
                       onPressed: () {
-                        
                         for (final t in vm.filters.selectedTags.toList()) {
-                          if (!selected.contains(t)) vm.toggleTag(t); 
+                          if (!selected.contains(t)) vm.toggleTag(t);
                         }
                         for (final t in selected) {
-                          if (!vm.filters.selectedTags.contains(t)) vm.toggleTag(t); 
+                          if (!vm.filters.selectedTags.contains(t)) {
+                            vm.toggleTag(t);
+                          }
                         }
                         Navigator.pop(context);
                       },

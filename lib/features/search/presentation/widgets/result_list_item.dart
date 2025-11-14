@@ -1,10 +1,15 @@
 import 'package:flutter/material.dart';
 import '../../models/search_models.dart';
-import '../pages/cafe_detail_page.dart'; // <-- detalle
 
 class ResultListItem extends StatelessWidget {
   final SearchResult result;
-  const ResultListItem({super.key, required this.result});
+  final Function()? onTap; 
+
+  const ResultListItem({
+    super.key,
+    required this.result,
+    this.onTap,
+  });
 
   Color _tierColor() {
     return switch (result.tier) {
@@ -36,31 +41,32 @@ class ResultListItem extends StatelessWidget {
     );
 
     final tierColor = _tierColor();
+    final String? imageUrl = result.thumbnail; 
 
     return Card(
       elevation: 0,
       shape: border,
       child: InkWell(
         borderRadius: BorderRadius.circular(16),
-        onTap: () {
-          Navigator.of(context).push(
-            MaterialPageRoute(
-              builder: (_) => CafeDetailPage(result: result),
-            ),
-          );
-        },
+        onTap: onTap,
         child: Padding(
           padding: const EdgeInsets.all(12.0),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Avatar + estado
+             
               Stack(
                 clipBehavior: Clip.none,
                 children: [
                   CircleAvatar(
                     radius: 26,
-                    backgroundImage: NetworkImage(result.thumbnail),
+                    backgroundColor: Colors.purple.shade100,
+                    backgroundImage: (imageUrl != null && imageUrl.isNotEmpty)
+                        ? NetworkImage(imageUrl)
+                        : null,
+                    child: (imageUrl == null || imageUrl.isEmpty)
+                        ? const Icon(Icons.local_cafe)
+                        : null,
                   ),
                   Positioned(right: -2, top: -2, child: statusIcon),
                 ],
@@ -72,7 +78,7 @@ class ResultListItem extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Título + badge
+                    
                     Row(
                       children: [
                         Expanded(
@@ -84,7 +90,10 @@ class ResultListItem extends StatelessWidget {
                         ),
                         const SizedBox(width: 6),
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 4,
+                          ),
                           decoration: BoxDecoration(
                             color: tierColor.withOpacity(.15),
                             borderRadius: BorderRadius.circular(12),
@@ -103,18 +112,20 @@ class ResultListItem extends StatelessWidget {
                     ),
                     const SizedBox(height: 6),
 
-                    // Chips
+                
                     Wrap(
                       spacing: 6,
                       runSpacing: -6,
-                      children: result.tags.take(3).map((t) => _chip(t)).toList(),
+                      children:
+                          result.tags.take(3).map((t) => _chip(t)).toList(),
                     ),
                     const SizedBox(height: 8),
 
                     // Rating + distancia
                     Row(
                       children: [
-                        const Icon(Icons.star, size: 18, color: Colors.amber),
+                        const Icon(Icons.star,
+                            size: 18, color: Colors.amber),
                         const SizedBox(width: 4),
                         Text(
                           '${result.rating.toStringAsFixed(1)} (${result.ratingCount})',
