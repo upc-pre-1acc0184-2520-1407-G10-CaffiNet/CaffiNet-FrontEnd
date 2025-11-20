@@ -3,7 +3,6 @@ import 'package:http/http.dart' as http;
 import '../../search/models/search_models.dart';
 
 class SearchService {
- 
   static const String baseUrl = 'http://127.0.0.1:8000';
 
   final http.Client _client = http.Client();
@@ -12,9 +11,7 @@ class SearchService {
     final uri = Uri.parse('$baseUrl/cafeterias/cafeterias/');
     final resp = await _client.get(uri);
 
-   
     print('GET $uri -> ${resp.statusCode}');
-   
 
     if (resp.statusCode != 200) {
       throw Exception('Failed to load cafeterias (${resp.statusCode})');
@@ -22,7 +19,6 @@ class SearchService {
 
     final decoded = json.decode(resp.body);
 
-    
     if (decoded is! List) {
       throw Exception(
         'Formato inesperado de respuesta: ${decoded.runtimeType}',
@@ -64,19 +60,15 @@ class SearchService {
       return false;
     }
 
-    //  Normaliza coordenadas gigantes 
+    
     double _normalizeCoord(double v) {
-      
       if (v.abs() <= 180) return v;
-
-      
       return v / 1e7;
     }
 
     final results = decoded.map<SearchResult>((dynamic j) {
       final map = j as Map<String, dynamic>;
 
-      
       final bool petFriendly = map['pet_friendly'] == true;
       final bool hasWifi = map['wifi'] == true;
       final bool hasReservations =
@@ -86,7 +78,7 @@ class SearchService {
       final bool hasMusic =
           (map['tipo_musica'] ?? map['music'])?.toString().isNotEmpty == true;
 
-      // Tags visibles en la UI 
+     
       final List<String> tags = [
         if (petFriendly) 'Pet-friendly',
         if (hasWifi) 'Free Wi-Fi',
@@ -95,25 +87,24 @@ class SearchService {
         if (hasMusic) 'Music',
       ];
 
-      
       final estilo = map['estilo_decorativo'] ?? map['restilo_decorativo'];
       if (estilo != null && estilo.toString().isNotEmpty) {
         tags.add(estilo.toString());
       }
 
-      // URL de imagen segura 
+     
       final String? thumbnail =
           (map['imagen'] as String?)?.isNotEmpty == true
               ? map['imagen'] as String
               : null;
 
-      //  Coordenadas desde el backend
+     
       final double rawLatitude =
-          _toDouble(map['latitude'] ?? map['latitud']); 
+          _toDouble(map['latitude'] ?? map['latitud']);
       final double rawLongitude =
           _toDouble(map['longitude'] ?? map['longitud']);
 
-      //  Coordenadas normalizadas para que estén en rango válido
+    
       final double latitude = _normalizeCoord(rawLatitude);
       final double longitude = _normalizeCoord(rawLongitude);
 
@@ -142,8 +133,7 @@ class SearchService {
     return results;
   }
 
-  ///  Obtiene el horario de una cafetería usando /horarios/{cafeteria_id}
-  
+ 
   Future<CafeteriaSchedule?> getCafeteriaHorario(String cafeteriaId) async {
     final uri = Uri.parse('$baseUrl/horarios/$cafeteriaId');
     final resp = await _client.get(uri);
@@ -156,7 +146,7 @@ class SearchService {
     }
 
     if (resp.statusCode == 404) {
-      // No tiene horario registrado
+      
       return null;
     }
 
@@ -166,9 +156,99 @@ class SearchService {
   Future<List<dynamic>> getCafeteriaCalificaciones(String cafeteriaId) async {
     final uri = Uri.parse('$baseUrl/calificaciones/$cafeteriaId');
     final resp = await _client.get(uri);
+    print('GET $uri -> ${resp.statusCode}');
     if (resp.statusCode != 200) {
       throw Exception('Failed to load calificaciones (${resp.statusCode})');
     }
     return json.decode(resp.body) as List<dynamic>;
+  }
+
+
+  Future<List<String>> getFavoritos(int userId) async {
+    final uri = Uri.parse('$baseUrl/favoritos/$userId');
+    final resp = await _client.get(uri);
+
+    print('GET $uri -> ${resp.statusCode}');
+
+    if (resp.statusCode != 200) {
+      throw Exception('Failed to load favoritos (${resp.statusCode})');
+    }
+
+    final decoded = json.decode(resp.body);
+
+    if (decoded is! List) {
+      
+      throw Exception(
+        'Formato inesperado de favoritos: ${decoded.runtimeType}',
+      );
+    }
+
+    
+    return decoded.map<String>((dynamic item) {
+      if (item is Map<String, dynamic>) {
+        final cafeteriaId =
+            item['cafeteria_id'] ?? item['cafeteria'] ?? item['id'];
+        return cafeteriaId.toString();
+      }
+      return item.toString();
+    }).toList();
+  }
+
+ 
+  Future<void> addFavorito({
+    required int userId,
+    required String cafeteriaId,
+  }) async {
+    final intCafeId = int.tryParse(cafeteriaId);
+    if (intCafeId == null) {
+      throw Exception('cafeteriaId no es un entero válido: $cafeteriaId');
+    }
+
+    final uri = Uri.parse('$baseUrl/favoritos/').replace(
+      queryParameters: {
+        'usuario_id': userId.toString(),
+        'cafeteria_id': intCafeId.toString(),
+      },
+    );
+
+    final resp = await _client.post(
+      uri,
+      headers: {'accept': 'application/json'},
+    );
+
+    print('POST $uri -> ${resp.statusCode}  ${resp.body}');
+
+    if (resp.statusCode != 200) {
+      throw Exception('Failed to add favorito (${resp.statusCode})');
+    }
+  }
+
+  
+  Future<void> removeFavorito({
+    required int userId,
+    required String cafeteriaId,
+  }) async {
+    final intCafeId = int.tryParse(cafeteriaId);
+    if (intCafeId == null) {
+      throw Exception('cafeteriaId no es un entero válido: $cafeteriaId');
+    }
+
+    final uri = Uri.parse('$baseUrl/favoritos/').replace(
+      queryParameters: {
+        'usuario_id': userId.toString(),
+        'cafeteria_id': intCafeId.toString(),
+      },
+    );
+
+    final resp = await _client.delete(
+      uri,
+      headers: {'accept': 'application/json'},
+    );
+
+    print('DELETE $uri -> ${resp.statusCode}  ${resp.body}');
+
+    if (resp.statusCode != 200) {
+      throw Exception('Failed to remove favorito (${resp.statusCode})');
+    }
   }
 }

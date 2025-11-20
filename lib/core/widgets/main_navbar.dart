@@ -2,6 +2,8 @@ import 'package:caffinet_app_flutter/features/home/presentation/pages/homePage_s
 import 'package:flutter/material.dart';
 import 'package:persistent_bottom_nav_bar/persistent_bottom_nav_bar.dart';
 import 'package:caffinet_app_flutter/features/search/presentation/pages/search_page_screen.dart';
+import 'package:caffinet_app_flutter/profile/presentation/pages/profile_page.dart';
+
 
 
 class MainPage extends StatefulWidget {
@@ -26,7 +28,7 @@ class _MainPageState extends State<MainPage> {
       SearchPageScreen(),
       Scaffold(body: Center(child: Text('Guide Page'))),
       Scaffold(body: Center(child: Text('Discover Page'))),
-      Scaffold(body: Center(child: Text('Profile Page'))),
+      ProfilePage(usuarioId: 1,), //por ahora hardcodeado 
     ];
   }
 

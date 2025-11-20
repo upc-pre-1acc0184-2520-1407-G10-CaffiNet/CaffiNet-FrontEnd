@@ -6,7 +6,7 @@ import '../widgets/search_input.dart';
 import '../widgets/filter_chip_row.dart';
 import '../widgets/result_list_item.dart';
 import '../widgets/empty_state.dart';
-import 'cafe_detail_page.dart'; 
+import 'cafe_detail_page.dart';
 
 class SearchPageScreen extends StatelessWidget {
   const SearchPageScreen({super.key});
@@ -15,8 +15,10 @@ class SearchPageScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return ChangeNotifierProvider(
       
-      
-      create: (_) => SearchViewModel()..loadCafeterias(),
+      create: (_) =>
+          SearchViewModel(userId: 1) 
+            ..loadCafeterias()
+            ..loadFavorites(),
       child: Scaffold(
         appBar: AppBar(
           title: const Text('Search Results'),
@@ -42,7 +44,7 @@ class SearchPageScreen extends StatelessWidget {
                     onSubmitted: (_) => vm.search(),
                     onClear: () {
                       vm.clear();
-                      vm.search(); 
+                      vm.search();
                     },
                   ),
                 ),
@@ -92,6 +94,7 @@ class SearchPageScreen extends StatelessWidget {
                     onTap: (t) => vm.toggleTag(t),
                   ),
                 ),
+
                 if (vm.isSearching) const LinearProgressIndicator(),
 
                 Expanded(
@@ -108,12 +111,17 @@ class SearchPageScreen extends StatelessWidget {
                               const SizedBox(height: 10),
                           itemBuilder: (context, i) {
                             if (i < vm.results.length) {
+                              final result = vm.results[i];
                               return ResultListItem(
-                                result: vm.results[i],
+                                result: result,
+                                
+                                isFavorite: vm.isFavorite(result.id),
+                                onFavoriteTap: () =>
+                                    vm.toggleFavorite(result.id),
                                 onTap: () async {
-                                  final cafeteriaId = vm.results[i].id;
+                                  final cafeteriaId = result.id;
 
-                                  // Detalles desde el backend
+                                  
                                   final horario =
                                       await vm.getCafeteriaHorario(
                                           cafeteriaId);
@@ -121,12 +129,11 @@ class SearchPageScreen extends StatelessWidget {
                                       await vm.getCafeteriaCalificaciones(
                                           cafeteriaId);
 
-                                 
                                   Navigator.push(
                                     context,
                                     MaterialPageRoute(
                                       builder: (context) => CafeDetailPage(
-                                        result: vm.results[i],
+                                        result: result,
                                         horario: horario,
                                         calificaciones: calificaciones,
                                       ),
@@ -135,6 +142,7 @@ class SearchPageScreen extends StatelessWidget {
                                 },
                               );
                             }
+                            
                             return Center(
                               child: TextButton(
                                 onPressed: vm.loadMore,

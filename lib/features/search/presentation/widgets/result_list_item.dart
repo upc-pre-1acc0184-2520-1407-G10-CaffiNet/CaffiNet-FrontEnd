@@ -3,12 +3,20 @@ import '../../models/search_models.dart';
 
 class ResultListItem extends StatelessWidget {
   final SearchResult result;
-  final Function()? onTap; 
+  final Function()? onTap;
+
+ 
+  final bool isFavorite;
+
+
+  final VoidCallback? onFavoriteTap;
 
   const ResultListItem({
     super.key,
     required this.result,
     this.onTap,
+    required this.isFavorite,
+    this.onFavoriteTap,
   });
 
   Color _tierColor() {
@@ -41,7 +49,7 @@ class ResultListItem extends StatelessWidget {
     );
 
     final tierColor = _tierColor();
-    final String? imageUrl = result.thumbnail; 
+    final String? imageUrl = result.thumbnail;
 
     return Card(
       elevation: 0,
@@ -54,7 +62,7 @@ class ResultListItem extends StatelessWidget {
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-             
+              // Avatar
               Stack(
                 clipBehavior: Clip.none,
                 children: [
@@ -73,12 +81,12 @@ class ResultListItem extends StatelessWidget {
               ),
               const SizedBox(width: 12),
 
-              // Info
+              
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    
+                   
                     Row(
                       children: [
                         Expanded(
@@ -89,30 +97,52 @@ class ResultListItem extends StatelessWidget {
                           ),
                         ),
                         const SizedBox(width: 6),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 8,
-                            vertical: 4,
-                          ),
-                          decoration: BoxDecoration(
-                            color: tierColor.withOpacity(.15),
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(color: tierColor),
-                          ),
-                          child: Text(
-                            result.tier.label,
-                            style: TextStyle(
-                              color: tierColor,
-                              fontSize: 12,
-                              fontWeight: FontWeight.w600,
+
+                        
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            IconButton(
+                              padding: EdgeInsets.zero,
+                              constraints: const BoxConstraints(),
+                              iconSize: 22,
+                              onPressed: onFavoriteTap,
+                              icon: Icon(
+                                isFavorite
+                                    ? Icons.favorite
+                                    : Icons.favorite_border,
+                                color: isFavorite
+                                    ? Colors.redAccent
+                                    : Colors.grey,
+                              ),
                             ),
-                          ),
+                            const SizedBox(width: 4),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 4,
+                              ),
+                              decoration: BoxDecoration(
+                                color: tierColor.withOpacity(.15),
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(color: tierColor),
+                              ),
+                              child: Text(
+                                result.tier.label,
+                                style: TextStyle(
+                                  color: tierColor,
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
                       ],
                     ),
                     const SizedBox(height: 6),
 
-                
+                    
                     Wrap(
                       spacing: 6,
                       runSpacing: -6,
@@ -121,7 +151,7 @@ class ResultListItem extends StatelessWidget {
                     ),
                     const SizedBox(height: 8),
 
-                    // Rating + distancia
+                   
                     Row(
                       children: [
                         const Icon(Icons.star,

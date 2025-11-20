@@ -6,17 +6,28 @@ import '../../service/search_service.dart';
 class SearchViewModel extends ChangeNotifier {
   final SearchService _searchService = SearchService();
 
+ 
+  final int? userId;
+
+  SearchViewModel({this.userId});
+
   SearchFilters _filters = const SearchFilters();
   SortBy _sortBy = SortBy.rating;
 
-  // Lista completa traída del backend
+  
   final List<SearchResult> _all = [];
 
- 
+  
   List<SearchResult> _page = [];
   bool _isSearching = false;
   int _nextIndex = 0;
   static const int _pageSize = 3;
+
+ 
+  final Set<String> _favoriteCafeteriaIds = {};
+
+  bool _isLoadingFavorites = false;
+  String? _favoritesError;
 
   SearchFilters get filters => _filters;
   SortBy get sortBy => _sortBy;
@@ -25,13 +36,17 @@ class SearchViewModel extends ChangeNotifier {
   int get totalFound => _filtered.length;
   bool get canLoadMore => _nextIndex < _filtered.length;
 
-  //  CARGAR DESDE BACKEND 
+  Set<String> get favoriteCafeteriaIds => _favoriteCafeteriaIds;
+  bool get isLoadingFavorites => _isLoadingFavorites;
+  String? get favoritesError => _favoritesError;
+
+
   Future<void> loadCafeterias() async {
     _isSearching = true;
     notifyListeners();
     try {
       final List<SearchResult> response =
-          await _searchService.getCafeterias(); 
+          await _searchService.getCafeterias();
 
       _all
         ..clear()
@@ -49,7 +64,85 @@ class SearchViewModel extends ChangeNotifier {
     }
   }
 
-  //  LÓGICA DE BÚSQUEDA 
+ 
+  Future<void> loadFavorites() async {
+   
+    if (userId == null) return;
+
+    _isLoadingFavorites = true;
+    _favoritesError = null;
+    notifyListeners();
+
+    try {
+      final ids = await _searchService.getFavoritos(userId!);
+      _favoriteCafeteriaIds
+        ..clear()
+        ..addAll(ids);
+    } catch (e, st) {
+      if (kDebugMode) {
+        print('Error al cargar favoritos: $e\n$st');
+      }
+      _favoritesError = 'No se pudieron cargar tus favoritos.';
+    } finally {
+      _isLoadingFavorites = false;
+      notifyListeners();
+    }
+  }
+
+  
+  bool isFavorite(String cafeteriaId) {
+    return _favoriteCafeteriaIds.contains(cafeteriaId);
+  }
+
+ 
+  Future<void> toggleFavorite(String cafeteriaId) async {
+    if (userId == null) {
+     
+      if (kDebugMode) {
+        print('toggleFavorite llamado sin userId, se ignora.');
+      }
+      return;
+    }
+
+    final alreadyFavorite = _favoriteCafeteriaIds.contains(cafeteriaId);
+
+    
+    if (alreadyFavorite) {
+      _favoriteCafeteriaIds.remove(cafeteriaId);
+    } else {
+      _favoriteCafeteriaIds.add(cafeteriaId);
+    }
+    notifyListeners();
+
+    try {
+      if (alreadyFavorite) {
+        await _searchService.removeFavorito(
+          userId: userId!,
+          cafeteriaId: cafeteriaId,
+        );
+      } else {
+        await _searchService.addFavorito(
+          userId: userId!,
+          cafeteriaId: cafeteriaId,
+        );
+      }
+    } catch (e, st) {
+      if (kDebugMode) {
+        print('Error al actualizar favorito: $e\n$st');
+      }
+
+      
+      if (alreadyFavorite) {
+        _favoriteCafeteriaIds.add(cafeteriaId);
+      } else {
+        _favoriteCafeteriaIds.remove(cafeteriaId);
+      }
+      notifyListeners();
+    }
+  }
+
+ 
+
   void onQueryChanged(String q) {
     _filters = _filters.copyWith(query: q);
     _resetAndSearch();
@@ -103,7 +196,7 @@ class SearchViewModel extends ChangeNotifier {
     search();
   }
 
-  //  FILTRO (texto + tags)
+  
   List<SearchResult> get _filtered {
     final q = _filters.query.trim().toLowerCase();
 
@@ -136,18 +229,18 @@ class SearchViewModel extends ChangeNotifier {
     }
 
     final filtered = _all.where((r) {
-      // Filtro por texto (nombre o dirección)
+      
       final byText = q.isEmpty ||
           r.name.toLowerCase().contains(q) ||
           r.address.toLowerCase().contains(q);
 
-      // Filtro por tags seleccionados
+     
       final byTags = _matchesTags(r, _filters.selectedTags);
 
       return byText && byTags;
     }).toList();
 
-    // Ordenamiento
+   
     filtered.sort((a, b) {
       switch (_sortBy) {
         case SortBy.rating:
@@ -162,7 +255,7 @@ class SearchViewModel extends ChangeNotifier {
     return filtered;
   }
 
-  //  MÉTODOS PARA DETALLE 
+ 
 
   Future<CafeteriaSchedule?> getCafeteriaHorario(String id) =>
       _searchService.getCafeteriaHorario(id);
