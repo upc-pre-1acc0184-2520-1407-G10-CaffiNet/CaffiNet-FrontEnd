@@ -1,3 +1,5 @@
+
+
 enum OpenStatus { open, closed }
 enum CafeTier { bronze, silver, gold }
 
@@ -7,20 +9,23 @@ class SearchResult {
   final String address;
   final double rating;
   final int ratingCount;
+
+  
   final double distanceMi;
+
   final List<String> tags;
   final OpenStatus status;
   final CafeTier tier;
   final String? thumbnail;
 
-  // Nuevos flags para filtros
+ 
   final bool petFriendly;
   final bool hasWifi;
   final bool hasReservations;
   final bool hasParking;
   final bool hasMusic;
 
-  // Coordenadas para el mapa
+  // Coordenadas para el mapa (en grados decimales)
   final double latitude;
   final double longitude;
 
@@ -44,7 +49,63 @@ class SearchResult {
     required this.longitude,
   });
 
-  // Método copyWith para crear un nuevo objeto con cambios
+
+  factory SearchResult.fromJson(Map<String, dynamic> json) {
+  
+    double _convertCoord(num v) {
+      if (v.abs() > 180) {
+        return v / 1e8;
+      }
+      return v.toDouble();
+    }
+
+    final rawLat = json['latitude'] as num;
+    final rawLon = json['longitude'] as num;
+
+   
+    final bool petFriendly = (json['pet_friendly'] as bool?) ?? false;
+    final bool wifi = (json['wifi'] as bool?) ?? false;
+    final bool terraza = (json['terraza'] as bool?) ?? false;
+    final String? tipoMusica = json['tipo_musica'] as String?;
+    final String? estiloDecorativo = json['estilo_decorativo'] as String?;
+
+    final tags = <String>[];
+    if (petFriendly) tags.add('Pet-friendly');
+    if (wifi) tags.add('Free Wi-Fi');
+    if (terraza) tags.add('Terraza');
+    if (tipoMusica != null && tipoMusica.trim().isNotEmpty) {
+      tags.add(tipoMusica);
+    }
+    if (estiloDecorativo != null && estiloDecorativo.trim().isNotEmpty) {
+      tags.add(estiloDecorativo);
+    }
+
+    return SearchResult(
+      id: (json['cafeteria_id'] ?? '').toString(),
+      name: json['name'] as String,
+      // no tenemos dirección exacta
+      address: (json['country'] as String?) ?? 'Perú',
+      // Hasta conectar con el endpoint de ratings, lo dejamos en 0.
+      rating: (json['rating'] as num?)?.toDouble() ?? 0.0,
+      ratingCount: (json['rating_count'] as int?) ?? 0,
+      
+      distanceMi: 0.0,
+      tags: tags,
+      status: OpenStatus.open, 
+      tier: CafeTier.bronze,   
+      thumbnail: null,        
+      petFriendly: petFriendly,
+      hasWifi: wifi,
+     
+      hasReservations: (json['reservas'] as bool?) ?? false,
+      hasParking: (json['parking'] as bool?) ?? false,
+      hasMusic: tipoMusica != null && tipoMusica.trim().isNotEmpty,
+      latitude: _convertCoord(rawLat),
+      longitude: _convertCoord(rawLon),
+    );
+  }
+
+  
   SearchResult copyWith({
     String? id,
     String? name,
@@ -113,7 +174,7 @@ extension CafeTierX on CafeTier {
       };
 }
 
-/// Modelo para el horario de la cafetería (endpoint /horarios/{cafeteria_id})
+
 class CafeteriaSchedule {
   final int cafeteriaId;
   final String horaApertura;

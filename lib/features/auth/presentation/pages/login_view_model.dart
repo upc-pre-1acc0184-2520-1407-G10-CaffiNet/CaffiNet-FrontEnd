@@ -1,47 +1,76 @@
-import 'package:caffinet_app_flutter/core/api/api_service.dart';
-import 'package:caffinet_app_flutter/features/auth/data/repositories/user_repository_impl.dart';
-import 'package:caffinet_app_flutter/features/auth/domain/usecases/login_user.dart';
 import 'package:flutter/material.dart';
 
-class LoginViewModel extends ChangeNotifier {
-  final LoginUserUseCase _loginUserUseCase =
-      LoginUserUseCase(UserRepositoryImpl(ApiService()));
+import '../../../../core/di/injector.dart';
+import '../../domain/usecases/login_user.dart'; // LoginUserUseCase y LoginParams
 
+/// ViewModel que maneja la lógica y el estado de la pantalla de inicio de sesión.
+class LoginViewModel extends ChangeNotifier {
+  // 💡 Obtención de dependencia del Inyector (Service Locator)
+  final LoginUserUseCase _loginUserUseCase = sl<LoginUserUseCase>();
+
+  // --- Controladores de Formulario ---
   final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
 
+  // --- Estado de la UI ---
   bool isPasswordVisible = false;
   bool isLoading = false;
+
+  // --- Mensajes de Error de Validación ---
   String? emailError;
   String? passwordError;
 
+  // --- Estado de sesión ---
+  /// Id del usuario que ha iniciado sesión (se usará para profile, favoritos, etc.).
+  int? loggedUserId;
+
+  // ------------------------------
+  // Métodos de Interacción de la UI
+  // ------------------------------
+
+  /// Alterna la visibilidad de la contraseña.
   void togglePasswordVisibility() {
     isPasswordVisible = !isPasswordVisible;
     notifyListeners();
   }
 
+  /// Intenta iniciar sesión llamando al UseCase del dominio.
   Future<bool> login() async {
-    emailError =
-        emailController.text.isEmpty ? 'Correo requerido' : null;
+    // 1. Validaciones básicas en la UI
+    emailError = emailController.text.isEmpty ? 'Correo requerido' : null;
     passwordError =
         passwordController.text.isEmpty ? 'Contraseña requerida' : null;
     notifyListeners();
 
     if (emailError != null || passwordError != null) return false;
 
+    // 2. Iniciar carga
     isLoading = true;
     notifyListeners();
 
     try {
-      await _loginUserUseCase.execute(
-        emailController.text,
-        passwordController.text,
+      // 3. Ejecutar el UseCase: se crea y pasa el objeto LoginParams
+      final params = LoginParams(
+        email: emailController.text,
+        password: passwordController.text,
       );
+
+      final user = await _loginUserUseCase.execute(params);
+
+      //  guardar el id del usuario logeado 
+      loggedUserId = int.tryParse(user.id.toString());
+
+      debugPrint(
+          "Inicio de sesión exitoso para: ${user.email} (id: ${user.id})");
       return true;
     } catch (e) {
-      passwordError = 'Inicio de sesión fallido';
+      // 4. Manejo de errores
+      loggedUserId = null;
+      passwordError = 'Inicio de sesión fallido: ${e.toString()}';
+      debugPrint('Error en login: $e');
       return false;
     } finally {
+      // 5. Finalizar carga
       isLoading = false;
       notifyListeners();
     }

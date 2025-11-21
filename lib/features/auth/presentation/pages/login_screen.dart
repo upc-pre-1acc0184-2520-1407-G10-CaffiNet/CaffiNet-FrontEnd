@@ -1,6 +1,7 @@
-import 'package:caffinet_app_flutter/features/auth/presentation/pages/login_view_model.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+
+import 'package:caffinet_app_flutter/features/auth/presentation/pages/login_view_model.dart';
 
 class LoginScreen extends StatelessWidget {
   const LoginScreen({super.key});
@@ -54,9 +55,14 @@ class LoginScreen extends StatelessWidget {
                         ? null
                         : () async {
                             final success = await viewModel.login();
-                            if (success) {
+                            if (success && viewModel.loggedUserId != null) {
                               Navigator.pushNamedAndRemoveUntil(
-                                  context, '/home', (route) => false);
+                                context,
+                                '/home',                 
+                                (route) => false,
+                                arguments:
+                                    viewModel.loggedUserId, //id del usuario logeado
+                              );
                             }
                           },
                     style: ElevatedButton.styleFrom(

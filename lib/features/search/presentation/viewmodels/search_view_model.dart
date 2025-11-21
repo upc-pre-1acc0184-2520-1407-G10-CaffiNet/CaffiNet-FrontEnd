@@ -1,12 +1,13 @@
 import 'dart:math';
 import 'package:flutter/foundation.dart';
+import 'package:geolocator/geolocator.dart';
+
 import '../../models/search_models.dart';
 import '../../service/search_service.dart';
 
 class SearchViewModel extends ChangeNotifier {
   final SearchService _searchService = SearchService();
 
- 
   final int? userId;
 
   SearchViewModel({this.userId});
@@ -14,18 +15,21 @@ class SearchViewModel extends ChangeNotifier {
   SearchFilters _filters = const SearchFilters();
   SortBy _sortBy = SortBy.rating;
 
-  
+  // Lista completa de resultados
   final List<SearchResult> _all = [];
 
-  
+ 
   List<SearchResult> _page = [];
   bool _isSearching = false;
   int _nextIndex = 0;
   static const int _pageSize = 3;
 
- 
-  final Set<String> _favoriteCafeteriaIds = {};
+  // Ubicación del usuario 
+  Position? _userPosition;
+  Position? get userPosition => _userPosition;
 
+  // Favoritos
+  final Set<String> _favoriteCafeteriaIds = {};
   bool _isLoadingFavorites = false;
   String? _favoritesError;
 
@@ -40,11 +44,15 @@ class SearchViewModel extends ChangeNotifier {
   bool get isLoadingFavorites => _isLoadingFavorites;
   String? get favoritesError => _favoritesError;
 
+  
 
   Future<void> loadCafeterias() async {
     _isSearching = true;
     notifyListeners();
     try {
+     
+      await _ensureUserLocation();
+
       final List<SearchResult> response =
           await _searchService.getCafeterias();
 
@@ -52,6 +60,10 @@ class SearchViewModel extends ChangeNotifier {
         ..clear()
         ..addAll(response);
 
+      
+      _updateDistances();
+
+      
       await search();
     } catch (e, st) {
       if (kDebugMode) {
@@ -64,9 +76,90 @@ class SearchViewModel extends ChangeNotifier {
     }
   }
 
+  // Pide permisos y obtiene la posición actual del usuario
+  Future<void> _ensureUserLocation() async {
+    if (_userPosition != null) return;
+
+    bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+    if (!serviceEnabled) {
+      
+      if (kDebugMode) {
+        print('Servicio de ubicación desactivado.');
+      }
+      return;
+    }
+
+    LocationPermission permission = await Geolocator.checkPermission();
+    if (permission == LocationPermission.denied) {
+      permission = await Geolocator.requestPermission();
+      if (permission == LocationPermission.denied) {
+        if (kDebugMode) {
+          print('Permiso de ubicación denegado por el usuario.');
+        }
+        return;
+      }
+    }
+
+    if (permission == LocationPermission.deniedForever) {
+      if (kDebugMode) {
+        print('Permiso de ubicación denegado permanentemente.');
+      }
+      return;
+    }
+
+   
+    _userPosition = await Geolocator.getCurrentPosition(
+      desiredAccuracy: LocationAccuracy.high,
+    );
+  }
+
+  
+  void _updateDistances() {
+    final pos = _userPosition;
+    if (pos == null) {
+      
+      return;
+    }
+
+    for (var i = 0; i < _all.length; i++) {
+      final r = _all[i];
+
+      final miles = _distanceInMiles(
+        pos.latitude,
+        pos.longitude,
+        r.latitude,
+        r.longitude,
+      );
+
+      _all[i] = r.copyWith(distanceMi: miles);
+    }
+  }
+
+  double _distanceInMiles(
+      double lat1, double lon1, double lat2, double lon2) {
+    const earthRadiusKm = 6371.0;
+
+    final dLat = _degToRad(lat2 - lat1);
+    final dLon = _degToRad(lon2 - lon1);
+
+    final a = pow(sin(dLat / 2), 2) +
+        cos(_degToRad(lat1)) *
+            cos(_degToRad(lat2)) *
+            pow(sin(dLon / 2), 2);
+
+    final c = 2 * atan2(sqrt(a), sqrt(1 - a));
+    final distanceKm = earthRadiusKm * c;
+
+    // Convertimos km a millas
+    return distanceKm * 0.621371;
+  }
+
+  double _degToRad(double deg) => deg * (pi / 180.0);
+
+ 
+  // Favoritos
  
   Future<void> loadFavorites() async {
-   
     if (userId == null) return;
 
     _isLoadingFavorites = true;
@@ -89,15 +182,12 @@ class SearchViewModel extends ChangeNotifier {
     }
   }
 
-  
   bool isFavorite(String cafeteriaId) {
     return _favoriteCafeteriaIds.contains(cafeteriaId);
   }
 
- 
   Future<void> toggleFavorite(String cafeteriaId) async {
     if (userId == null) {
-     
       if (kDebugMode) {
         print('toggleFavorite llamado sin userId, se ignora.');
       }
@@ -131,7 +221,7 @@ class SearchViewModel extends ChangeNotifier {
         print('Error al actualizar favorito: $e\n$st');
       }
 
-      
+     
       if (alreadyFavorite) {
         _favoriteCafeteriaIds.add(cafeteriaId);
       } else {
@@ -141,7 +231,7 @@ class SearchViewModel extends ChangeNotifier {
     }
   }
 
- 
+
 
   void onQueryChanged(String q) {
     _filters = _filters.copyWith(query: q);
@@ -196,7 +286,6 @@ class SearchViewModel extends ChangeNotifier {
     search();
   }
 
-  
   List<SearchResult> get _filtered {
     final q = _filters.query.trim().toLowerCase();
 
@@ -221,7 +310,6 @@ class SearchViewModel extends ChangeNotifier {
             if (!r.hasMusic) return false;
             break;
           default:
-            
             if (!r.tags.contains(tag)) return false;
         }
       }
@@ -229,18 +317,15 @@ class SearchViewModel extends ChangeNotifier {
     }
 
     final filtered = _all.where((r) {
-      
       final byText = q.isEmpty ||
           r.name.toLowerCase().contains(q) ||
           r.address.toLowerCase().contains(q);
 
-     
       final byTags = _matchesTags(r, _filters.selectedTags);
 
       return byText && byTags;
     }).toList();
 
-   
     filtered.sort((a, b) {
       switch (_sortBy) {
         case SortBy.rating:

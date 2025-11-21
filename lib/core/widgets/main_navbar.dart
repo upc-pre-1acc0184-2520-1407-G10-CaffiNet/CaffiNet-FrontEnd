@@ -4,10 +4,14 @@ import 'package:persistent_bottom_nav_bar/persistent_bottom_nav_bar.dart';
 import 'package:caffinet_app_flutter/features/search/presentation/pages/search_page_screen.dart';
 import 'package:caffinet_app_flutter/features/profile/presentation/pages/profile_page.dart';
 
-
-
 class MainPage extends StatefulWidget {
-  const MainPage({super.key});
+  //  id del usuario logeado
+  final int userId;
+
+  const MainPage({
+    super.key,
+    required this.userId, 
+  });
 
   @override
   State<MainPage> createState() => _MainPageState();
@@ -23,12 +27,14 @@ class _MainPageState extends State<MainPage> {
   }
 
   List<Widget> _buildScreens() {
-    return const [
-      HomePageScreen(),
-      SearchPageScreen(),
-      Scaffold(body: Center(child: Text('Guide Page'))),
-      Scaffold(body: Center(child: Text('Discover Page'))),
-      ProfilePage(usuarioId: 1,), //por ahora hardcodeado 
+    //  ya no puede ser `const [` porque usamos widget.userId
+    return [
+      const HomePageScreen(),
+      const SearchPageScreen(),
+      const Scaffold(body: Center(child: Text('Guide Page'))),
+      const Scaffold(body: Center(child: Text('Discover Page'))),
+      
+      ProfilePage(usuarioId: widget.userId), // usa el id del usuario logeado
     ];
   }
 
@@ -38,36 +44,36 @@ class _MainPageState extends State<MainPage> {
         icon: const Icon(Icons.home_outlined),
         inactiveIcon: const Icon(Icons.home),
         title: "Home",
-        activeColorPrimary: Color(0xFF2563EB),
-        inactiveColorPrimary: Color(0xFF6B7280),
+        activeColorPrimary: const Color(0xFF2563EB),
+        inactiveColorPrimary: const Color(0xFF6B7280),
       ),
       PersistentBottomNavBarItem(
         icon: const Icon(Icons.search_outlined),
         inactiveIcon: const Icon(Icons.search),
         title: "Search",
-        activeColorPrimary: Color(0xFF2563EB),
-        inactiveColorPrimary: Color(0xFF6B7280),
+        activeColorPrimary: const Color(0xFF2563EB),
+        inactiveColorPrimary: const Color(0xFF6B7280),
       ),
       PersistentBottomNavBarItem(
         icon: const Icon(Icons.map_outlined),
         inactiveIcon: const Icon(Icons.map),
         title: "Guide",
-        activeColorPrimary: Color(0xFF2563EB),
-        inactiveColorPrimary: Color(0xFF6B7280),
+        activeColorPrimary: const Color(0xFF2563EB),
+        inactiveColorPrimary: const Color(0xFF6B7280),
       ),
       PersistentBottomNavBarItem(
         icon: const Icon(Icons.star_outline),
         inactiveIcon: const Icon(Icons.star),
         title: "Discover",
-        activeColorPrimary: Color(0xFF2563EB),
-        inactiveColorPrimary: Color(0xFF6B7280),
+        activeColorPrimary: const Color(0xFF2563EB),
+        inactiveColorPrimary: const Color(0xFF6B7280),
       ),
       PersistentBottomNavBarItem(
         icon: const Icon(Icons.person_outline),
         inactiveIcon: const Icon(Icons.person),
         title: "Profile",
-        activeColorPrimary: Color(0xFF2563EB),
-        inactiveColorPrimary: Color(0xFF6B7280),
+        activeColorPrimary: const Color(0xFF2563EB),
+        inactiveColorPrimary: const Color(0xFF6B7280),
       ),
     ];
   }

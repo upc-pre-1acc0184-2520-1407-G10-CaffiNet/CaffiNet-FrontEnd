@@ -1,27 +1,49 @@
-import 'package:caffinet_app_flutter/features/auth/domain/entities/user.dart';
 
-class UserModel extends User {
+import '../../domain/entities/user.dart';
+
+class UserModel {
+  final String id;
+  final String name; 
+  final String email;
+
   const UserModel({
-    required super.id,
-    required super.name,
-    required super.email,
-    super.avatarUrl,
+    required this.id,
+    required this.name,
+    required this.email,
   });
 
+  // Constructor general (asume que el backend devuelve todo, usado en Login)
   factory UserModel.fromJson(Map<String, dynamic> json) {
+    // Esto podría fallar si 'nombre' no viene.
     return UserModel(
-      id: json['id'].toString(),
-      name: json['name'] ?? '',
-      email: json['email'] ?? '',
-      avatarUrl: json['avatarUrl'],
+      id: json['id'] != null ? json['id'].toString() : '0', 
+      name: (json['nombre'] as String?) ?? '', // Hacemos 'nombre' opcional
+      email: json['email'] as String,
+    );
+  }
+  
+  // 🚨 CONSTRUCTOR ESPECÍFICO PARA REGISTRO
+  // Usa la respuesta parcial del backend (solo ID y Email) y el nombre que enviamos.
+  factory UserModel.fromRegistrationResponse({
+    required Map<String, dynamic> json,
+    required String suppliedName,
+  }) {
+    final idString = json['id'] != null ? json['id'].toString() : '0';
+    final emailString = (json['email'] as String?) ?? '';
+
+    return UserModel(
+      id: idString,
+      name: suppliedName, // <--- Usamos el nombre que ENVIAMOS
+      email: emailString,
     );
   }
 
-  Map<String, dynamic> toJson() {
-    return {
-      'id': id,
-      'name': name,
-      'email': email
-    };
+  /// Convierte el Modelo de Datos a la Entidad de Dominio.
+  User toEntity() {
+    return User(
+      id: id,
+      name: name,
+      email: email,
+    );
   }
 }

@@ -4,7 +4,6 @@ import 'package:caffinet_app_flutter/features/auth/presentation/pages/register_s
 import 'package:caffinet_app_flutter/features/search/presentation/pages/search_page_screen.dart';
 import 'package:flutter/material.dart';
 
-
 class AppNavigation {
   /// Genera las rutas dinámicamente según el nombre.
   static Route<dynamic> generateRoute(RouteSettings settings) {
@@ -16,7 +15,18 @@ class AppNavigation {
         return MaterialPageRoute(builder: (_) => const RegisterScreen());
 
       case '/home':
-        return MaterialPageRoute(builder: (_) => const MainPage());
+        //  leemos el userId que viene desde el login
+        final userId = settings.arguments as int?;
+
+        // Si por alguna razón viene null, mandamos al login
+        if (userId == null) {
+          return MaterialPageRoute(builder: (_) => const LoginScreen());
+        }
+
+        // Pasamos el userId a MainPage
+        return MaterialPageRoute(
+          builder: (_) => MainPage(userId: userId),
+        );
 
       case '/search':
         return MaterialPageRoute(builder: (_) => const SearchPageScreen());

@@ -1,4 +1,3 @@
-import 'package:caffinet_app_flutter/core/widgets/main_navbar.dart';
 import 'package:caffinet_app_flutter/features/auth/presentation/pages/register_view_model.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -28,6 +27,7 @@ class RegisterScreen extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 16),
+
                   // Email
                   TextField(
                     controller: vm.emailController,
@@ -38,6 +38,7 @@ class RegisterScreen extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 16),
+
                   // Contraseña
                   TextField(
                     controller: vm.passwordController,
@@ -56,6 +57,7 @@ class RegisterScreen extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 24),
+
                   // Botón Registrar
                   ElevatedButton(
                     onPressed: vm.isLoading
@@ -63,10 +65,10 @@ class RegisterScreen extends StatelessWidget {
                         : () async {
                             final success = await vm.register();
                             if (success && context.mounted) {
-                              Navigator.pushReplacement(
+                              // 👇 Después de registrarse, lo mandamos al login
+                              Navigator.pushReplacementNamed(
                                 context,
-                                MaterialPageRoute(
-                                    builder: (_) => const MainPage()),
+                                '/login',
                               );
                             }
                           },
@@ -86,6 +88,7 @@ class RegisterScreen extends StatelessWidget {
                         : const Text('Crear Cuenta'),
                   ),
                   const SizedBox(height: 16),
+
                   // Link a Login
                   TextButton(
                     onPressed: () {

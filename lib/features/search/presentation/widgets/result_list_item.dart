@@ -5,10 +5,7 @@ class ResultListItem extends StatelessWidget {
   final SearchResult result;
   final Function()? onTap;
 
- 
   final bool isFavorite;
-
-
   final VoidCallback? onFavoriteTap;
 
   const ResultListItem({
@@ -51,6 +48,11 @@ class ResultListItem extends StatelessWidget {
     final tierColor = _tierColor();
     final String? imageUrl = result.thumbnail;
 
+    
+    final double distance = result.distanceMi;
+    final String distanceText =
+        distance > 0 ? '${distance.toStringAsFixed(1)} mi' : '-- mi';
+
     return Card(
       elevation: 0,
       shape: border,
@@ -62,7 +64,7 @@ class ResultListItem extends StatelessWidget {
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Avatar
+             
               Stack(
                 clipBehavior: Clip.none,
                 children: [
@@ -81,12 +83,12 @@ class ResultListItem extends StatelessWidget {
               ),
               const SizedBox(width: 12),
 
-              
+              // Contenido
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                   
+                    // Nombre + favoritos + tier
                     Row(
                       children: [
                         Expanded(
@@ -97,8 +99,6 @@ class ResultListItem extends StatelessWidget {
                           ),
                         ),
                         const SizedBox(width: 6),
-
-                        
                         Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
@@ -142,7 +142,7 @@ class ResultListItem extends StatelessWidget {
                     ),
                     const SizedBox(height: 6),
 
-                    
+                    // Tags
                     Wrap(
                       spacing: 6,
                       runSpacing: -6,
@@ -151,7 +151,7 @@ class ResultListItem extends StatelessWidget {
                     ),
                     const SizedBox(height: 8),
 
-                   
+                    // Rating + distancia
                     Row(
                       children: [
                         const Icon(Icons.star,
@@ -164,7 +164,7 @@ class ResultListItem extends StatelessWidget {
                         const SizedBox(width: 16),
                         const Icon(Icons.location_on_outlined, size: 18),
                         const SizedBox(width: 4),
-                        Text('${result.distanceMi.toStringAsFixed(1)} mi'),
+                        Text(distanceText),
                       ],
                     ),
                   ],

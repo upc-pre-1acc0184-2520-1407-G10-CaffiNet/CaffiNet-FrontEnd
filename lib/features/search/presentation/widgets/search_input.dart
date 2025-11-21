@@ -24,7 +24,7 @@ class SearchInput extends StatelessWidget {
       controller: controller,
       textInputAction: TextInputAction.search,
       decoration: InputDecoration(
-        hintText: 'Search for services or technicians…',
+        hintText: 'Search ',
         prefixIcon: const Icon(Icons.search),
         suffixIcon: value.isNotEmpty
             ? IconButton(icon: const Icon(Icons.close), onPressed: onClear)
