@@ -8,7 +8,7 @@ import 'homrPage_view_model.dart';
 import '../../models/home_ui_models.dart';
 import '../widgets/cafe_big_card.dart';
 
-// Desde el feature de Search
+
 import 'package:caffinet_app_flutter/features/search/models/search_models.dart';
 import 'package:caffinet_app_flutter/features/search/presentation/pages/search_page_screen.dart';
 import 'package:caffinet_app_flutter/features/search/presentation/pages/cafe_detail_page.dart';
@@ -52,7 +52,7 @@ class HomePageScreen extends StatelessWidget {
                 slivers: [
                   SliverToBoxAdapter(child: _Header()),
                   const SliverToBoxAdapter(child: SizedBox(height: 16)),
-                  // Popular Tags
+                  
                   const SliverToBoxAdapter(
                     child: Padding(
                       padding: EdgeInsets.symmetric(horizontal: 16),
@@ -65,14 +65,14 @@ class HomePageScreen extends StatelessWidget {
                       child: _PopularTags(vm: vm),
                     ),
                   ),
-                  // Suggested for You
+                  
                   SliverToBoxAdapter(
                     child: Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 16),
                       child: _SectionHeader(
                         title: 'Suggested for You',
                         actionText: 'See all',
-                        // See all -> Search
+                        
                         onTap: () => _goToSearch(context),
                       ),
                     ),
@@ -86,14 +86,14 @@ class HomePageScreen extends StatelessWidget {
                     ),
                   ),
                   const SliverToBoxAdapter(child: SizedBox(height: 16)),
-                  // Nearby
+                 
                   SliverToBoxAdapter(
                     child: Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 16),
                       child: _SectionHeader(
                         title: 'Nearby Coffe Shopp',
                         actionText: 'View all',
-                        // View all -> detalle de la cafetería más cercana
+                        
                         onTap: vm.nearestItem == null
                             ? null
                             : () => _goToNearbyDetail(
@@ -121,7 +121,7 @@ class HomePageScreen extends StatelessWidget {
     );
   }
 
-  /// Ir a la pantalla de Search
+
   static void _goToSearch(BuildContext context) {
     PersistentNavBarNavigator.pushNewScreen(
       context,
@@ -131,18 +131,18 @@ class HomePageScreen extends StatelessWidget {
     );
   }
 
-  /// Ir directamente al detalle de la cafetería más cercana
+ 
   static void _goToNearbyDetail(BuildContext context, HomeCafeItem item) {
     final tier = _tierFromLabel(item.level);
 
-    // Convertimos HomeCafeItem -> SearchResult (modelo de Search)
+    
     final searchResult = SearchResult(
       id: item.id.toString(),
       name: item.name,
-      address: 'Perú', // no tenemos dirección exacta
+      address: 'Perú', 
       rating: item.rating,
       ratingCount: item.reviews,
-      distanceMi: item.distanceKm * 0.621371, // km -> millas
+      distanceMi: item.distanceKm * 0.621371,
       tags: item.tags,
       status: OpenStatus.open,
       tier: tier,
@@ -160,13 +160,13 @@ class HomePageScreen extends StatelessWidget {
       longitude: item.lng,
     );
 
-    // ⚠️ CafeDetailPage pide result, horario y calificaciones
+   
     PersistentNavBarNavigator.pushNewScreen(
       context,
       screen: CafeDetailPage(
         result: searchResult,
-        horario: null,          // TODO: cargar horario real si quieres
-        calificaciones: const [], // TODO: cargar calificaciones reales
+        horario: null,          
+        calificaciones: const [], 
       ),
       withNavBar: true,
       pageTransitionAnimation: PageTransitionAnimation.cupertino,
@@ -186,7 +186,7 @@ class HomePageScreen extends StatelessWidget {
   }
 }
 
-/* ====================== WIDGETS PRIVADOS (UI PURA) ====================== */
+
 
 class _Header extends StatelessWidget {
   @override

@@ -1,4 +1,4 @@
-// lib/features/home/presentation/pages/homrPage_view_model.dart
+
 import 'dart:convert';
 import 'dart:math' as math;
 
@@ -15,7 +15,7 @@ class HomePageViewModel extends ChangeNotifier {
 
   final http.Client _client;
 
-  // ---------- estado ----------
+  
   bool isLoading = false;
   String? errorMessage;
 
@@ -53,7 +53,7 @@ class HomePageViewModel extends ChangeNotifier {
   /// ubicación actual del usuario (para el mapa de Nearby)
   LatLng? userLatLng;
 
-  // ---------- ciclo de vida ----------
+ 
   Future<void> init() async {
     isLoading = true;
     errorMessage = null;
@@ -101,8 +101,7 @@ class HomePageViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
-  // ---------- red / backend ----------
-  // Web => 127.0.0.1, Emulador => 10.0.2.2
+ 
   static const String _baseUrl = kIsWeb
       ? 'http://127.0.0.1:8000'
       : 'http://10.0.2.2:8000';
@@ -123,11 +122,11 @@ class HomePageViewModel extends ChangeNotifier {
     for (final raw in data) {
       final map = raw as Map<String, dynamic>;
 
-      // Coordenadas vienen “raras”; las normalizamos a grados decimales.
+      
       final lat = _decodeLat(map['latitude'] as num);
       final lng = _decodeLng(map['longitude'] as num);
 
-      // Distancia REAL user–café (en km)
+      
       final distanceKm = _distanceInKm(
         user.latitude,
         user.longitude,
@@ -135,10 +134,10 @@ class HomePageViewModel extends ChangeNotifier {
         lng,
       );
 
-      // Texto en millas para la UI
+      // Texto en millas 
       final distanceLabel = _formatDistanceMiles(distanceKm);
 
-      // Rating / reviews de relleno por ahora
+      // Rating 
       final rating =
           (map['rating'] as num?)?.toDouble() ?? (3.5 + (i % 3) * 0.5);
       final reviews = map['reviews'] as int? ?? (80 + i * 5);
@@ -149,7 +148,7 @@ class HomePageViewModel extends ChangeNotifier {
               ? 'Silver'
               : 'Gold';
 
-      // 👇 AQUÍ construimos los tags reales
+      
       final tags = _buildTagsFromRaw(map);
 
       result.add(
@@ -173,12 +172,11 @@ class HomePageViewModel extends ChangeNotifier {
     return result;
   }
 
-  /// Lee los tags reales del GET si existe `tags: [...]`.
-  /// Si no, arma algunos a partir de los flags de la cafetería.
+  
   static List<String> _buildTagsFromRaw(Map<String, dynamic> raw) {
     final tags = <String>[];
 
-    // 1) Si el backend ya manda un arreglo "tags", lo usamos directo.
+    
     final dynamic rawTags = raw['tags'];
     if (rawTags is List) {
       for (final t in rawTags) {
@@ -188,7 +186,7 @@ class HomePageViewModel extends ChangeNotifier {
       }
     }
 
-    // 2) Si no hay "tags" o vino vacío, construimos algunos básicos
+   
     if (tags.isEmpty) {
       final petFriendly = (raw['pet_friendly'] as bool?) ?? false;
       final wifi = (raw['wifi'] as bool?) ?? false;
@@ -212,7 +210,7 @@ class HomePageViewModel extends ChangeNotifier {
     return tags;
   }
 
-  // ---------- geolocalización ----------
+  
   Future<Position> _getCurrentPosition() async {
     final serviceEnabled = await Geolocator.isLocationServiceEnabled();
     if (!serviceEnabled) {
@@ -239,8 +237,7 @@ class HomePageViewModel extends ChangeNotifier {
     );
   }
 
-  // ---------- helpers de coordenadas ----------
-  /// Normaliza cualquier valor a un rango válido de latitud (-90, 90)
+
   static double _decodeLat(num value) {
     final d = value.toDouble();
 
@@ -258,7 +255,7 @@ class HomePageViewModel extends ChangeNotifier {
     return d.clamp(-90.0, 90.0);
   }
 
-  /// Normaliza cualquier valor a un rango válido de longitud (-180, 180)
+  
   static double _decodeLng(num value) {
     final d = value.toDouble();
 
@@ -276,7 +273,7 @@ class HomePageViewModel extends ChangeNotifier {
     return d.clamp(-180.0, 180.0);
   }
 
-  // ---------- helpers de distancia ----------
+ 
   static double _distanceInKm(
     double lat1,
     double lon1,

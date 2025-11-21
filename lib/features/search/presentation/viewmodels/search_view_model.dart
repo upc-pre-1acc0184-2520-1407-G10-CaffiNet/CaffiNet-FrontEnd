@@ -150,7 +150,7 @@ class SearchViewModel extends ChangeNotifier {
     final c = 2 * atan2(sqrt(a), sqrt(1 - a));
     final distanceKm = earthRadiusKm * c;
 
-    // Convertimos km a millas
+    
     return distanceKm * 0.621371;
   }
 

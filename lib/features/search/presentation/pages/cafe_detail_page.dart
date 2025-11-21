@@ -224,9 +224,9 @@ class CafeDetailPage extends StatelessWidget {
 
           const SizedBox(height: 8),
 
-          // 🔹 NUEVA SECCIÓN: "VER CARTA"
+          
           CafeMenuSection(
-            cafeteriaId: result.id, // tu id es String
+            cafeteriaId: result.id, 
           ),
 
           const SizedBox(height: 16),
@@ -284,10 +284,10 @@ class CafeDetailPage extends StatelessWidget {
 
           const SizedBox(height: 16),
 
-          // Botón para guía (placeholder)
+          
           FilledButton(
             onPressed: () {
-              // Aquí podrías abrir un intent / URL externo
+              
             },
             child: const Text('Guide'),
           ),

@@ -88,7 +88,7 @@ class ResultListItem extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Nombre + favoritos + tier
+                    
                     Row(
                       children: [
                         Expanded(

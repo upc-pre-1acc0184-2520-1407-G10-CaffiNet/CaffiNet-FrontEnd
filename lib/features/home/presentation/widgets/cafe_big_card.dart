@@ -1,4 +1,4 @@
-// lib/features/home/presentation/widgets/cafe_big_card.dart
+
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
@@ -47,7 +47,7 @@ class CafeBigCard extends StatelessWidget {
                   initialZoom: 16,
                   minZoom: 3,
                   maxZoom: 18,
-                  // Interacciones del mapa (drag + zoom + rueda del mouse)
+                  // Interacciones del mapa 
                   interactionOptions: const InteractionOptions(
                     flags: InteractiveFlag.drag |
                         InteractiveFlag.pinchZoom |
@@ -112,7 +112,7 @@ class CafeBigCard extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 8),
-          // 👉 Tags reales de la cafetería
+          
           Wrap(
             spacing: 8,
             runSpacing: 8,

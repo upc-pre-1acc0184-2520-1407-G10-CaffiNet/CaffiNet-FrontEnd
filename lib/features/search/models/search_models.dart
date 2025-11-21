@@ -25,7 +25,7 @@ class SearchResult {
   final bool hasParking;
   final bool hasMusic;
 
-  // Coordenadas para el mapa (en grados decimales)
+  // Coordenadas para el mapa 
   final double latitude;
   final double longitude;
 

@@ -1,4 +1,4 @@
-// lib/features/home/presentation/widgets/cafe_list_item.dart
+
 import 'package:flutter/material.dart';
 import '../../models/home_ui_models.dart';
 
@@ -73,16 +73,14 @@ class CafeListItem extends StatelessWidget {
           ],
         ),
         onTap: () {
-          // TODO: navegar al detalle de la cafetería usando data.id
-          // Navigator.of(context).pushNamed('/cafeteria-detail', arguments: data.id);
+         
         },
       ),
     );
   }
 
   Widget _buildLeadingImage() {
-    // Si tienes imageUrl desde el backend, úsala;
-    // si no, muestra un placeholder bonito.
+    
     if (data.imageUrl != null && data.imageUrl!.isNotEmpty) {
       return Image.network(
         data.imageUrl!,
