@@ -11,16 +11,29 @@ class OptimalRouteResultModel extends OptimalRouteResult {
   });
 
   factory OptimalRouteResultModel.fromJson(Map<String, dynamic> json) {
+    // 🔍 DEBUG: Imprimir JSON recibido del backend
+    print('🔍 Backend Response (Raw JSON):');
+    print(json.toString());
+    print('');
+    
     // Mapea la lista de resultados de cafeterías
     final List<CafeRouteItemModel> cafeterias = 
         (json['ordered_cafeterias'] as List)
         .map((e) => CafeRouteItemModel.fromJson(e))
         .toList();
+    
+    print('✅ Cafeterías parseadas: ${cafeterias.length}');
+    for (var i = 0; i < cafeterias.length && i < 3; i++) {
+      final c = cafeterias[i];
+      print('   Café #${i+1}: ${c.name} (${c.latitude}, ${c.longitude})');
+    }
+    print('');
 
     // Parseo defensivo de puntos de ruta reales si vienen del Backend/OSRM
     final List<LatLng> realRoutePoints = [];
     if (json.containsKey('real_route_points') && json['real_route_points'] is List) {
       final rawPoints = json['real_route_points'] as List;
+      print('🛣️ Real Route Points encontrados: ${rawPoints.length}');
       for (final p in rawPoints) {
         try {
           if (p is List && p.length >= 2) {
@@ -54,7 +67,11 @@ class OptimalRouteResultModel extends OptimalRouteResult {
           // Omite puntos malformados
         }
       }
+      print('✅ Real Route Points parseados: ${realRoutePoints.length}');
+    } else {
+      print('⚠️ No se encontraron real_route_points en la respuesta');
     }
+    print('');
 
     return OptimalRouteResultModel(
       orderedCafeterias: cafeterias,

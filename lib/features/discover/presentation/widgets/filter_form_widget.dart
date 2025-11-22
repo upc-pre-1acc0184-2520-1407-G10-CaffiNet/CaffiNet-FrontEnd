@@ -21,12 +21,94 @@ class FilterFormWidget extends StatefulWidget {
 
 class _FilterFormWidgetState extends State<FilterFormWidget> {
   Map<String, dynamic> _currentFilters = {};
+  
+  Widget _buildMultiCheckboxFilter({
+    required String label,
+    required String keyName,
+    required List<String> options,
+  }) {
+    final selectedValues = _currentFilters[keyName] as List<String>? ?? [];
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(label, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+        const SizedBox(height: 4),
+        Wrap(
+          spacing: 8,
+          runSpacing: 4,
+          children: options.map((option) {
+            final isSelected = selectedValues.contains(option);
+            return FilterChip(
+              label: Text(option),
+              selected: isSelected,
+              onSelected: (selected) {
+                setState(() {
+                  if (selected) {
+                    selectedValues.add(option);
+                  } else {
+                    selectedValues.remove(option);
+                  }
+                  _currentFilters[keyName] = selectedValues;
+                  _updatePreferences();
+                });
+              },
+            );
+          }).toList(),
+        ),
+        const SizedBox(height: 8),
+      ],
+    );
+  }
+
+  Widget _buildSliderFilter({
+    required String label,
+    required String keyName,
+    required double min,
+    required double max,
+    required int divisions,
+  }) {
+    final currentValue = (_currentFilters[keyName] as num?)?.toDouble() ?? min;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(label, style: const TextStyle(fontWeight: FontWeight.bold)),
+            Text('${currentValue.toStringAsFixed(1)} km', style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.blue)),
+          ],
+        ),
+        Slider(
+          value: currentValue,
+          min: min,
+          max: max,
+          divisions: divisions,
+          label: currentValue.toStringAsFixed(1),
+          onChanged: (newValue) {
+            setState(() {
+              _currentFilters[keyName] = newValue;
+              _updatePreferences();
+            });
+          },
+        ),
+        const SizedBox(height: 8),
+      ],
+    );
+  }
   String _selectedAlgorithm = 'Dijkstra'; 
   bool _isLoadingLocation = false; // Nuevo estado para el botón de carga
 
   final List<String> _algorithmOptions = ['Dijkstra', 'Floyd-Warshall', 'Bellman-Ford'];
   final List<String> _musicOptions = ['alegre', 'calmada', 'sin música'];
-  final List<String> _presentationOptions = ['Molido', 'Cápsula', 'Grano'];
+  final List<String> _iluminacionOptions = ['tenue', 'cálida', 'brillante'];
+  final List<String> _estiloDecorativoOptions = ['minimalista', 'rústico', 'vintage', 'artístico', 'industrial'];
+  final List<String> _precioOptions = ['barato', 'medio', 'caro'];
+  final List<String> _tiposProductoOptions = ['postre', 'comida', 'bebida'];
+  final List<String> _categoriaBebidaOptions = ['café', 'espresso clásicas', 'smoothies'];
+  final List<String> _tamanoBebidaOptions = ['corto', 'alto', 'grande', 'venti'];
+  final List<String> _tipoLecheOptions = ['ninguna', 'descremada', '2%', 'soya'];
 
   @override
   void initState() {
@@ -121,12 +203,16 @@ class _FilterFormWidgetState extends State<FilterFormWidget> {
               });
             },
           ),
-          const Divider(height: 30),
+            const Divider(height: 24),
 
-          // 2. Filtros de Tags (CÓDIGO ORIGINAL)
-          const Text('Filtros de Ambiente y Servicio:', style: TextStyle(fontWeight: FontWeight.bold)),
+            // 2. AMBIENTE Y SERVICIOS
+            const Text('🏠 Ambiente y Servicios', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+            const SizedBox(height: 8),
           _buildCheckboxFilter(label: 'Pet Friendly', keyName: 'pet_friendly'),
-          _buildCheckboxFilter(label: 'WiFi', keyName: 'wifi'),
+            _buildCheckboxFilter(label: 'WiFi', keyName: 'wifi'),
+            _buildCheckboxFilter(label: 'Terraza', keyName: 'terraza'),
+            _buildCheckboxFilter(label: 'Enchufes', keyName: 'enchufes'),
+            _buildCheckboxFilter(label: 'Abierto Ahora', keyName: 'abierto_ahora'),
           _buildDropdownFilter(
             label: 'Tipo de Música',
             value: _currentFilters['tipo_musica'] ?? _musicOptions.first,
@@ -139,7 +225,100 @@ class _FilterFormWidgetState extends State<FilterFormWidget> {
               });
             },
           ),
+            _buildDropdownFilter(
+              label: 'Iluminación',
+              value: _currentFilters['iluminacion'] ?? _iluminacionOptions.first,
+              options: _iluminacionOptions,
+              keyName: 'iluminacion',
+              onChanged: (newValue) {
+                setState(() {
+                  _currentFilters['iluminacion'] = newValue;
+                  _updatePreferences();
+                });
+              },
+            ),
+            _buildDropdownFilter(
+              label: 'Estilo Decorativo',
+              value: _currentFilters['estilo_decorativo'] ?? _estiloDecorativoOptions.first,
+              options: _estiloDecorativoOptions,
+              keyName: 'estilo_decorativo',
+              onChanged: (newValue) {
+                setState(() {
+                  _currentFilters['estilo_decorativo'] = newValue;
+                  _updatePreferences();
+                });
+              },
+            ),
+            const Divider(height: 24),
+
+            // 3. PREFERENCIAS DE MENÚ
+            const Text('🍫 Preferencias de Menú', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+            const SizedBox(height: 8),
+            _buildCheckboxFilter(label: 'Vegano', keyName: 'vegano'),
+            _buildDropdownFilter(
+              label: 'Rango de Precio',
+              value: _currentFilters['precio'] ?? _precioOptions.first,
+              options: _precioOptions,
+              keyName: 'precio',
+              onChanged: (newValue) {
+                setState(() {
+                  _currentFilters['precio'] = newValue;
+                  _updatePreferences();
+                });
+              },
+            ),
+            _buildMultiCheckboxFilter(
+              label: 'Tipo de Producto',
+              keyName: 'tipos_producto',
+              options: _tiposProductoOptions,
+            ),
           const Divider(height: 30),
+
+            // 4. BEBIDAS
+            const Text('☕ Preferencias de Bebidas', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+            const SizedBox(height: 8),
+            _buildMultiCheckboxFilter(
+              label: 'Categoría de Bebida',
+              keyName: 'categoria_bebida',
+              options: _categoriaBebidaOptions,
+            ),
+            _buildDropdownFilter(
+              label: 'Tamaño de Bebida',
+              value: _currentFilters['tamano_bebida'] ?? _tamanoBebidaOptions.first,
+              options: _tamanoBebidaOptions,
+              keyName: 'tamano_bebida',
+              onChanged: (newValue) {
+                setState(() {
+                  _currentFilters['tamano_bebida'] = newValue;
+                  _updatePreferences();
+                });
+              },
+            ),
+            _buildDropdownFilter(
+              label: 'Tipo de Leche',
+              value: _currentFilters['tipo_leche'] ?? _tipoLecheOptions.first,
+              options: _tipoLecheOptions,
+              keyName: 'tipo_leche',
+              onChanged: (newValue) {
+                setState(() {
+                  _currentFilters['tipo_leche'] = newValue;
+                  _updatePreferences();
+                });
+              },
+            ),
+            const Divider(height: 24),
+
+            // 5. DISTANCIA
+            const Text('📍 Distancia', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+            const SizedBox(height: 8),
+            _buildSliderFilter(
+              label: 'Distancia Máxima (km)',
+              keyName: 'distancia_max_km',
+              min: 0.5,
+              max: 20,
+              divisions: 39,
+            ),
+            const Divider(height: 30),
 
           // 3. Botón de Acción (CORREGIDO PARA MOSTRAR CARGA)
           SizedBox(

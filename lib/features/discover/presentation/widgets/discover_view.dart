@@ -4,6 +4,7 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import '../blocs/discover_bloc.dart';
 import '../blocs/discover_state.dart';
+import '../blocs/discover_event.dart';
 import '../widgets/filter_form_widget.dart';
 import '../widgets/discover_result_widget.dart';
 // Asegúrate de importar la entidad de resultado aquí si es necesario
@@ -27,6 +28,21 @@ class _DiscoverViewState extends State<DiscoverView> {
   // Estado para controlar si el panel de filtros está expandido
   bool _filtersExpanded = false;
 
+  /// Método para volver a los filtros (reset del estado)
+  void _backToFilters() {
+    setState(() {
+      _showFilters = true;
+      _filtersExpanded = false;
+    });
+    // Emitir evento para volver al estado inicial
+    context.read<DiscoverBloc>().add(
+      PreferencesUpdated(
+        currentFilters: {},
+        selectedAlgorithm: 'Dijkstra',
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     // El BlocConsumer escucha cambios de estado y muestra errores/actualizaciones
@@ -42,7 +58,7 @@ class _DiscoverViewState extends State<DiscoverView> {
       },
       builder: (context, state) {
         final bool hasResult = state is DiscoverSuccess;
-        final result = hasResult ? (state as DiscoverSuccess).result : null;
+        final result = hasResult ? state.result : null;
 
         // Mapa base (si no hay resultado mostramos un mapa vacío centrado en 0,0)
         final Widget baseMap = FlutterMap(
@@ -62,9 +78,27 @@ class _DiscoverViewState extends State<DiscoverView> {
             // 1) Mapa en fondo (o el widget de resultado que ya pinta su propio mapa si hay resultado)
             Positioned.fill(
               child: hasResult && result != null
-                  ? DiscoverResultWidget(result: result)
+                  ? DiscoverResultWidget(
+                      result: result,
+                      onBackToFilters: _backToFilters,
+                    )
                   : baseMap,
             ),
+
+            // 1.5) Botón "Volver a Filtros" en la esquina superior derecha (solo si hay resultado)
+            if (hasResult)
+              Positioned(
+                right: 16,
+                top: 16,
+                child: FloatingActionButton.small(
+                  heroTag: 'backToFilters',
+                  onPressed: _backToFilters,
+                  backgroundColor: Colors.white,
+                  foregroundColor: Colors.blue,
+                  tooltip: 'Volver a Filtros',
+                  child: const Icon(Icons.edit),
+                ),
+              ),
 
             // 2) Filtros arriba como overlay (tap para expandir)
             if (_showFilters)

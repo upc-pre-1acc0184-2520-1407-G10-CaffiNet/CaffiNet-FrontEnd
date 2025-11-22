@@ -5,8 +5,13 @@ import 'package:latlong2/latlong.dart';
 
 class DiscoverResultWidget extends StatefulWidget {
   final OptimalRouteResult result;
+  final VoidCallback? onBackToFilters;
 
-  const DiscoverResultWidget({super.key, required this.result});
+  const DiscoverResultWidget({
+    super.key, 
+    required this.result,
+    this.onBackToFilters,
+  });
 
   @override
   State<DiscoverResultWidget> createState() => _DiscoverResultWidgetState();
@@ -22,6 +27,17 @@ class _DiscoverResultWidgetState extends State<DiscoverResultWidget> {
   @override
   void initState() {
     super.initState();
+    // Debug: Imprimir datos recibidos
+    print('🔍 DiscoverResultWidget recibió:');
+    print('  - Cafeterías: ${result.orderedCafeterias.length}');
+    print('  - RealRoutePoints: ${result.realRoutePoints.length}');
+    if (result.orderedCafeterias.isNotEmpty) {
+      print('  - Primera cafetería: ${result.orderedCafeterias.first.name} (${result.orderedCafeterias.first.latitude}, ${result.orderedCafeterias.first.longitude})');
+    }
+    if (result.realRoutePoints.isNotEmpty) {
+      print('  - Primer punto OSRM: ${result.realRoutePoints.first}');
+    }
+    
     // 2. Ejecutar el centrado después de que el widget se ha renderizado.
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _fitBoundsToRoute(); 
@@ -71,9 +87,11 @@ class _DiscoverResultWidgetState extends State<DiscoverResultWidget> {
     if (result.realRoutePoints.isNotEmpty) {
       // Usar los puntos de OSRM (curvos)
       routePoints.addAll(result.realRoutePoints);
+      print('✅ Polyline usando ${routePoints.length} puntos de OSRM');
     } else {
       // Fallback: Trazar línea recta entre las cafeterías (usando la entidad)
       routePoints.addAll(result.orderedCafeterias.map((c) => LatLng(c.latitude, c.longitude)));
+      print('⚠️ Polyline usando ${routePoints.length} puntos de cafeterías (fallback)');
     }
 
     return Polyline(
@@ -84,7 +102,7 @@ class _DiscoverResultWidgetState extends State<DiscoverResultWidget> {
   }
 
   List<Marker> _buildMarkers() {
-    return result.orderedCafeterias.asMap().entries.map((entry) {
+    final markers = result.orderedCafeterias.asMap().entries.map((entry) {
       final index = entry.key + 1;
       final cafe = entry.value;
 
@@ -107,20 +125,9 @@ class _DiscoverResultWidgetState extends State<DiscoverResultWidget> {
         ),
       );
     }).toList();
-  }
-
-  Widget _buildMetadataRow(String title, String value, IconData icon) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4.0),
-      child: Row(
-        children: [
-          Icon(icon, size: 18, color: Colors.grey[700]),
-          const SizedBox(width: 8),
-          Text('$title ', style: const TextStyle(fontWeight: FontWeight.w600)),
-          Flexible(child: Text(value)),
-        ],
-      ),
-    );
+    
+    print('🗺️ Creados ${markers.length} markers para cafeterías');
+    return markers;
   }
 
   // --- Widget Build ---
@@ -205,6 +212,22 @@ class _DiscoverResultWidgetState extends State<DiscoverResultWidget> {
                           ),
                         ],
                       ),
+                      const SizedBox(height: 12),
+                      // Botón "Editar Filtros"
+                      if (widget.onBackToFilters != null)
+                        SizedBox(
+                          width: double.infinity,
+                          child: ElevatedButton.icon(
+                            onPressed: widget.onBackToFilters,
+                            icon: const Icon(Icons.edit),
+                            label: const Text('Editar Filtros y Probar Otros'),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.blue,
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(vertical: 12),
+                            ),
+                          ),
+                        ),
                       const SizedBox(height: 8),
                       const Divider(),
                       // Lista de Cafeterías
