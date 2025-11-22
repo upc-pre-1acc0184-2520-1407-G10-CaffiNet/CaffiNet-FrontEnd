@@ -8,15 +8,27 @@ import '../widgets/result_list_item.dart';
 import '../widgets/empty_state.dart';
 import 'cafe_detail_page.dart';
 
+// 1. DEFINIR EL CALLBACK (necesario para la comunicación con MainPage)
+typedef GuideSelectedCallback = void Function(String id, String name);
+
 class SearchPageScreen extends StatelessWidget {
-  const SearchPageScreen({super.key});
+
+  
+  // 2. AÑADIR EL CAMPO DEL CALLBACK
+  final GuideSelectedCallback onGuideSelected;
+
+  // 3. MODIFICAR EL CONSTRUCTOR (dejar de ser const y requerir el callback)
+  const SearchPageScreen({
+    super.key,
+    required this.onGuideSelected, // Se usa para inicializar el campo de arriba
+    });
+  
 
   @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider(
-      
       create: (_) =>
-          SearchViewModel(userId: 1) 
+          SearchViewModel(userId: 1)
             ..loadCafeterias()
             ..loadFavorites(),
       child: Scaffold(
@@ -114,31 +126,43 @@ class SearchPageScreen extends StatelessWidget {
                               final result = vm.results[i];
                               return ResultListItem(
                                 result: result,
-                                
                                 isFavorite: vm.isFavorite(result.id),
                                 onFavoriteTap: () =>
                                     vm.toggleFavorite(result.id),
+                                // 4. LÓGICA DE NAVEGACIÓN CORREGIDA
                                 onTap: () async {
-                                  final cafeteriaId = result.id;
-
+                                  // Asumimos que quieres ver el detalle primero.
+                                  // Si quieres ir a la guía directamente, omite el Navigator.push
                                   
+                                  // 4.1. Navegar a la página de detalle (OPCIONAL, si sigue siendo necesario)
                                   final horario =
                                       await vm.getCafeteriaHorario(
-                                          cafeteriaId);
+                                          result.id);
                                   final calificaciones =
                                       await vm.getCafeteriaCalificaciones(
-                                          cafeteriaId);
-
-                                  Navigator.push(
+                                          result.id);
+                                  
+                                  await Navigator.push(
                                     context,
                                     MaterialPageRoute(
                                       builder: (context) => CafeDetailPage(
-                                        result: result,
-                                        horario: horario,
+                                        result: result, 
+                                        horario: horario, 
                                         calificaciones: calificaciones,
+                                        
+                                        // PASANDO EL CALLBACK
+                                        onGuideSelected: onGuideSelected, 
                                       ),
                                     ),
                                   );
+
+                                  return Center(
+                                    child: TextButton(
+                                      onPressed: vm.loadMore,
+                                      child: const Text('Load more results'),
+                                    ),
+                                  );
+                                  
                                 },
                               );
                             }

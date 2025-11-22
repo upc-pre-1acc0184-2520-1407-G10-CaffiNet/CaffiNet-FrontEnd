@@ -1,3 +1,5 @@
+import 'package:caffinet_app_flutter/features/guide/presentation/pages/guide_page.dart';
+import 'package:caffinet_app_flutter/features/search/presentation/pages/search_page_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart' as latlng;
@@ -9,12 +11,16 @@ class CafeDetailPage extends StatelessWidget {
   final SearchResult result;
   final CafeteriaSchedule? horario;        
   final List<dynamic> calificaciones;      
+  final GuideSelectedCallback onGuideSelected;
   
   const CafeDetailPage({
     super.key,
     required this.result,
-    required this.horario,
-    required this.calificaciones,
+    this.horario, // Si son opcionales
+    this.calificaciones = const [], // Si tienen valor por defecto
+        
+    // 🛑 2. REQUERIR EL NUEVO CAMPO EN EL CONSTRUCTOR
+    required this.onGuideSelected, 
   });
 
   @override
@@ -286,10 +292,16 @@ class CafeDetailPage extends StatelessWidget {
 
           
           FilledButton(
-            onPressed: () {
-              
-            },
-            child: const Text('Guide'),
+              onPressed: () {
+                  // 1. Ejecuta el callback, pasando el ID y el nombre del café.
+                  // Esto le indica a MainPage que cambie la pestaña.
+                  onGuideSelected(result.id, result.name); 
+
+                  // 2. Cierra la pantalla de detalles.
+                  // Esto regresa a SearchPageScreen, que a su vez ya está en la pestaña Guide.
+                  Navigator.pop(context); 
+              },
+              child: const Text('Guide'),
           ),
 
           const SizedBox(height: 16),

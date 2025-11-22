@@ -27,6 +27,45 @@ class ApiClient {
 
   ApiClient({required this.client});
 
+  // =================================================================
+  // MÉTODO GET 
+  // =================================================================
+  Future<http.Response> get(String path, {Map<String, String>? headers}) async {
+    final uri = Uri.parse('${ApiConstants.baseUrl}$path');
+    final defaultHeaders = {
+      'Content-Type': 'application/json',
+      'Accept': 'application/json',
+    };
+    
+    final finalHeaders = {...defaultHeaders, ...?headers};
+
+    try {
+      final response = await client.get(
+        uri,
+        headers: finalHeaders,
+      );
+
+
+      if (response.statusCode == 401) {
+        throw AuthException('Sesión expirada o no autorizada.');
+      } else if (response.statusCode >= 400) {
+        final errorBody = jsonDecode(response.body);
+        throw HttpException(response.statusCode, errorBody['message'] ?? 'Error de servidor.');
+      }
+
+      // Devolvemos la respuesta para que el DataSource la maneje si es 2xx
+      return response;
+
+    } on Exception catch (e) {
+      // Manejo de errores de red o del cliente HTTP
+      throw ServerException('Error de conexión o servidor: ${e.toString()}');
+    }
+  }
+
+  // =================================================================
+  // MÉTODO POST 
+  // =================================================================
+
   Future<Map<String, dynamic>> post(String path, {required Map<String, dynamic> body}) async {
     final uri = Uri.parse('${ApiConstants.baseUrl}$path');
     final headers = {

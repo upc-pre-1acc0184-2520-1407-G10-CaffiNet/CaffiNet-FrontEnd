@@ -13,9 +13,19 @@ import 'package:caffinet_app_flutter/features/search/models/search_models.dart';
 import 'package:caffinet_app_flutter/features/search/presentation/pages/search_page_screen.dart';
 import 'package:caffinet_app_flutter/features/search/presentation/pages/cafe_detail_page.dart';
 
-class HomePageScreen extends StatelessWidget {
-  const HomePageScreen({super.key});
 
+typedef GuideSelectedCallback = void Function(String id, String name);
+
+class HomePageScreen extends StatelessWidget {
+  final VoidCallback? onGoToSearch;
+  final GuideSelectedCallback onGuideSelected;
+  
+  const HomePageScreen({
+    this.onGoToSearch, 
+    required this.onGuideSelected,
+    super.key,
+  });
+  
   @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider(
@@ -73,7 +83,7 @@ class HomePageScreen extends StatelessWidget {
                         title: 'Suggested for You',
                         actionText: 'See all',
                         
-                        onTap: () => _goToSearch(context),
+                        onTap: onGoToSearch,
                       ),
                     ),
                   ),
@@ -99,6 +109,7 @@ class HomePageScreen extends StatelessWidget {
                             : () => _goToNearbyDetail(
                                   context,
                                   vm.nearestItem!,
+                                  onGuideSelected,
                                 ),
                       ),
                     ),
@@ -122,17 +133,9 @@ class HomePageScreen extends StatelessWidget {
   }
 
 
-  static void _goToSearch(BuildContext context) {
-    PersistentNavBarNavigator.pushNewScreen(
-      context,
-      screen: const SearchPageScreen(),
-      withNavBar: true,
-      pageTransitionAnimation: PageTransitionAnimation.cupertino,
-    );
-  }
 
  
-  static void _goToNearbyDetail(BuildContext context, HomeCafeItem item) {
+  static void _goToNearbyDetail(BuildContext context, HomeCafeItem item,GuideSelectedCallback onGuideSelected,) {
     final tier = _tierFromLabel(item.level);
 
     
@@ -167,6 +170,7 @@ class HomePageScreen extends StatelessWidget {
         result: searchResult,
         horario: null,          
         calificaciones: const [], 
+        onGuideSelected: onGuideSelected,
       ),
       withNavBar: true,
       pageTransitionAnimation: PageTransitionAnimation.cupertino,
@@ -304,6 +308,7 @@ class _PopularTags extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final HomePageScreen homePage = context.findAncestorWidgetOfExactType<HomePageScreen>()!;
     return SizedBox(
       height: 84,
       child: ListView.separated(
@@ -318,7 +323,7 @@ class _PopularTags extends StatelessWidget {
           return GestureDetector(
             onTap: () {
               vm.selectTag(index);
-              HomePageScreen._goToSearch(context);
+              homePage.onGoToSearch?.call();
             },
             child: Container(
               width: 92,

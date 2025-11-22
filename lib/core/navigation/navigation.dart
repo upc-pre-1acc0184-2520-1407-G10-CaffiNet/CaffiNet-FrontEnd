@@ -28,9 +28,6 @@ class AppNavigation {
           builder: (_) => MainPage(userId: userId),
         );
 
-      case '/search':
-        return MaterialPageRoute(builder: (_) => const SearchPageScreen());
-
       case '/guide':
         return MaterialPageRoute(
           builder: (_) => const Scaffold(

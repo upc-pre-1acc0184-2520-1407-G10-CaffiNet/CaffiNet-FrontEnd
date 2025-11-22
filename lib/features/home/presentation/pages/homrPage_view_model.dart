@@ -15,7 +15,15 @@ class HomePageViewModel extends ChangeNotifier {
 
   final http.Client _client;
 
-  
+  bool _isDisposed = false;
+
+  @override
+  void dispose() {
+    _isDisposed = true; 
+    _client.close();
+    super.dispose();
+  }
+
   bool isLoading = false;
   String? errorMessage;
 
@@ -57,7 +65,7 @@ class HomePageViewModel extends ChangeNotifier {
   Future<void> init() async {
     isLoading = true;
     errorMessage = null;
-    notifyListeners();
+    if (!_isDisposed) notifyListeners();
 
     try {
       await _loadData();
@@ -65,7 +73,7 @@ class HomePageViewModel extends ChangeNotifier {
       errorMessage = e.toString();
     } finally {
       isLoading = false;
-      notifyListeners();
+      if (!_isDisposed) notifyListeners();
     }
   }
 
@@ -98,7 +106,7 @@ class HomePageViewModel extends ChangeNotifier {
 
   void selectTag(int index) {
     selectedTagIndex = index;
-    notifyListeners();
+    if (!_isDisposed) notifyListeners();
   }
 
  
