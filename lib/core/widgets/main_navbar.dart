@@ -1,12 +1,16 @@
+import 'package:caffinet_app_flutter/core/di/injector.dart';
+import 'package:caffinet_app_flutter/core/service/osrm_service.dart';
 import 'package:caffinet_app_flutter/features/guide/presentation/pages/guide_page.dart';
 import 'package:caffinet_app_flutter/features/home/presentation/pages/homePage_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:persistent_bottom_nav_bar/persistent_bottom_nav_bar.dart';
 import 'package:caffinet_app_flutter/features/search/presentation/pages/search_page_screen.dart';
 import 'package:caffinet_app_flutter/features/profile/presentation/pages/profile_page.dart';
+import 'package:caffinet_app_flutter/features/discover/presentation/pages/discover_page.dart';
+import 'package:caffinet_app_flutter/features/discover/domain/usecases/get_optimal_route_usecase.dart'; 
+
 
 class MainPage extends StatefulWidget {
-  //  id del usuario logeado
   final int userId;
 
   const MainPage({
@@ -22,6 +26,7 @@ class _MainPageState extends State<MainPage> {
   late PersistentTabController _controller;
   String? _selectedCafeteriaId;
   String? _selectedCafeteriaName;
+  
   @override
   void initState() {
     super.initState();
@@ -30,40 +35,40 @@ class _MainPageState extends State<MainPage> {
 
   void _goToSearchTab() {
     setState(() {
-      // 1 es el índice de la pestaña Search
       _controller.jumpToTab(1); 
     });
   }
-  // 2. FUNCIÓN DE ACTUALIZACIÓN DE ESTADO Y NAVEGACIÓN
+
   void _updateSelectedGuide(String id, String name) {
-    // 1. Actualizar el estado (esto reconstruye GuidePage con los datos)
     setState(() {
       _selectedCafeteriaId = id;
       _selectedCafeteriaName = name;
-      _controller.jumpToTab(2);
+      _controller.jumpToTab(2); 
     });
-
   }
 
-  
-
   List<Widget> _buildScreens() {
-    //  ya no puede ser `const [` porque usamos widget.userId
+    // ACCESO LIMPIO A GETIT (sl)
+    final getOptimalRouteUseCase = sl<GetOptimalRouteUseCase>();
+    final osrmService = sl<OSRMService>();
+    
     return [
       HomePageScreen(
-            onGoToSearch: _goToSearchTab,
-            onGuideSelected: _updateSelectedGuide 
-      ),
+        onGoToSearch: _goToSearchTab,
+        onGuideSelected: _updateSelectedGuide 
+      ), // Index 0
 
-      SearchPageScreen(onGuideSelected: _updateSelectedGuide),
+      SearchPageScreen(onGuideSelected: _updateSelectedGuide), // Index 1
       
       GuidePage(
         cafeteriaId: _selectedCafeteriaId, 
         cafeteriaName: _selectedCafeteriaName,
-      ),  
-      const Scaffold(body: Center(child: Text('Discover Page'))),
+      ), // Index 2
+      
+      // INYECCIÓN DE DEPENDENCIA LIMPIA EN DISCOVERPAGE
+      DiscoverPage(getOptimalRoute: getOptimalRouteUseCase,osrmService: osrmService ), // Index 3
 
-      ProfilePage(usuarioId: widget.userId), // usa el id del usuario logeado
+      ProfilePage(usuarioId: widget.userId), // Index 4
     ];
   }
 
