@@ -1,5 +1,4 @@
 
-
 enum OpenStatus { open, closed }
 enum CafeTier { bronze, silver, gold }
 
@@ -10,7 +9,6 @@ class SearchResult {
   final double rating;
   final int ratingCount;
 
-  
   final double distanceMi;
 
   final List<String> tags;
@@ -18,14 +16,13 @@ class SearchResult {
   final CafeTier tier;
   final String? thumbnail;
 
- 
   final bool petFriendly;
   final bool hasWifi;
   final bool hasReservations;
   final bool hasParking;
   final bool hasMusic;
 
-  // Coordenadas para el mapa 
+  // Coordenadas para el mapa
   final double latitude;
   final double longitude;
 
@@ -49,9 +46,10 @@ class SearchResult {
     required this.longitude,
   });
 
+  
+  int get cafeteriaIdAsInt => int.tryParse(id) ?? 0;
 
   factory SearchResult.fromJson(Map<String, dynamic> json) {
-  
     double _convertCoord(num v) {
       if (v.abs() > 180) {
         return v / 1e8;
@@ -62,7 +60,6 @@ class SearchResult {
     final rawLat = json['latitude'] as num;
     final rawLon = json['longitude'] as num;
 
-   
     final bool petFriendly = (json['pet_friendly'] as bool?) ?? false;
     final bool wifi = (json['wifi'] as bool?) ?? false;
     final bool terraza = (json['terraza'] as bool?) ?? false;
@@ -83,20 +80,16 @@ class SearchResult {
     return SearchResult(
       id: (json['cafeteria_id'] ?? '').toString(),
       name: json['name'] as String,
-      // no tenemos dirección exacta
       address: (json['country'] as String?) ?? 'Perú',
-      // Hasta conectar con el endpoint de ratings, lo dejamos en 0.
       rating: (json['rating'] as num?)?.toDouble() ?? 0.0,
       ratingCount: (json['rating_count'] as int?) ?? 0,
-      
       distanceMi: 0.0,
       tags: tags,
-      status: OpenStatus.open, 
-      tier: CafeTier.bronze,   
-      thumbnail: null,        
+      status: OpenStatus.open,
+      tier: CafeTier.bronze,
+      thumbnail: null,
       petFriendly: petFriendly,
       hasWifi: wifi,
-     
       hasReservations: (json['reservas'] as bool?) ?? false,
       hasParking: (json['parking'] as bool?) ?? false,
       hasMusic: tipoMusica != null && tipoMusica.trim().isNotEmpty,
@@ -105,7 +98,6 @@ class SearchResult {
     );
   }
 
-  
   SearchResult copyWith({
     String? id,
     String? name,
@@ -173,7 +165,6 @@ extension CafeTierX on CafeTier {
         CafeTier.gold => 'Gold',
       };
 }
-
 
 class CafeteriaSchedule {
   final int cafeteriaId;

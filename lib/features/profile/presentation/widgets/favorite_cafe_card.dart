@@ -12,89 +12,72 @@ class FavoriteCafeCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      margin: const EdgeInsets.only(bottom: 12),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
-      elevation: 0,
-      color: Colors.white,
+    return Container(
+      margin: const EdgeInsets.symmetric(vertical: 8),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.03),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         child: Row(
           children: [
             
             Container(
-              width: 44,
-              height: 44,
+              width: 40,
+              height: 40,
               decoration: BoxDecoration(
-                color: const Color(0xFFF3E8FF),
+                color: const Color(0xFFE0C8FF),
                 borderRadius: BorderRadius.circular(14),
               ),
-              child: const Icon(Icons.local_cafe, size: 24),
+              child: const Icon(
+                Icons.local_cafe_rounded,
+                color: Colors.white,
+                size: 22,
+              ),
             ),
             const SizedBox(width: 12),
 
-            
+            // Texto
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  // Nombre de la cafetería
                   Text(
                     fav.nombre,
                     style: const TextStyle(
                       fontSize: 15,
                       fontWeight: FontWeight.w600,
                     ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
-                  const SizedBox(height: 4),
-                  Row(
-                    children: [
-                      const Icon(Icons.star, size: 14, color: Colors.amber),
-                      const SizedBox(width: 4),
-                      Text(
-                        (fav.rating ?? 0).toStringAsFixed(1),
-                        style: const TextStyle(fontSize: 12),
-                      ),
-                      const SizedBox(width: 10),
-                      const Icon(Icons.location_on, size: 14),
-                      const SizedBox(width: 2),
-                      Text(
-                        '${(fav.distancia ?? 0).toStringAsFixed(1)} mi',
-                        style: const TextStyle(fontSize: 12),
-                      ),
-                    ],
-                  ),
-                  if (fav.categoria != null && fav.categoria!.isNotEmpty) ...[
-                    const SizedBox(height: 4),
-                    Text(
-                      fav.categoria!,
-                      style: TextStyle(
-                        fontSize: 11,
-                        color: Colors.grey.shade600,
+
+                  // Categoria 
+                  if (fav.categoria != null && fav.categoria!.isNotEmpty)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 2.0),
+                      child: Text(
+                        fav.categoria!,
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.grey.shade600,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
                     ),
-                  ],
                 ],
               ),
             ),
-
-           
-            if (fav.nivel != null && fav.nivel!.isNotEmpty)
-              Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(14),
-                  border: Border.all(color: Colors.brown.shade300),
-                ),
-                child: Text(
-                  fav.nivel!,
-                  style: TextStyle(
-                    fontSize: 11,
-                    color: Colors.brown.shade700,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ),
           ],
         ),
       ),

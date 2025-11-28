@@ -60,7 +60,6 @@ class SearchService {
       return false;
     }
 
-    
     double _normalizeCoord(double v) {
       if (v.abs() <= 180) return v;
       return v / 1e7;
@@ -78,7 +77,6 @@ class SearchService {
       final bool hasMusic =
           (map['tipo_musica'] ?? map['music'])?.toString().isNotEmpty == true;
 
-     
       final List<String> tags = [
         if (petFriendly) 'Pet-friendly',
         if (hasWifi) 'Free Wi-Fi',
@@ -92,19 +90,16 @@ class SearchService {
         tags.add(estilo.toString());
       }
 
-     
       final String? thumbnail =
           (map['imagen'] as String?)?.isNotEmpty == true
               ? map['imagen'] as String
               : null;
 
-     
       final double rawLatitude =
           _toDouble(map['latitude'] ?? map['latitud']);
       final double rawLongitude =
           _toDouble(map['longitude'] ?? map['longitud']);
 
-    
       final double latitude = _normalizeCoord(rawLatitude);
       final double longitude = _normalizeCoord(rawLongitude);
 
@@ -133,20 +128,36 @@ class SearchService {
     return results;
   }
 
- 
+  
+  //  HORARIO DE CAFETERÍA
+  
   Future<CafeteriaSchedule?> getCafeteriaHorario(String cafeteriaId) async {
-    final uri = Uri.parse('$baseUrl/horarios/$cafeteriaId');
+   
+    final uri = Uri.parse('$baseUrl/horarios/horarios/$cafeteriaId');
     final resp = await _client.get(uri);
 
     print('GET $uri -> ${resp.statusCode}');
 
     if (resp.statusCode == 200) {
-      final data = json.decode(resp.body) as Map<String, dynamic>;
-      return CafeteriaSchedule.fromJson(data);
+      final data = json.decode(resp.body);
+
+      if (data is Map<String, dynamic>) {
+        return CafeteriaSchedule.fromJson(data);
+      }
+
+      
+      if (data is List &&
+          data.isNotEmpty &&
+          data.first is Map<String, dynamic>) {
+        return CafeteriaSchedule.fromJson(
+            data.first as Map<String, dynamic>);
+      }
+
+      return null;
     }
 
     if (resp.statusCode == 404) {
-      
+      // Sin horario registrado para esa cafetería
       return null;
     }
 
@@ -163,7 +174,6 @@ class SearchService {
     return json.decode(resp.body) as List<dynamic>;
   }
 
-
   Future<List<String>> getFavoritos(int userId) async {
     final uri = Uri.parse('$baseUrl/favoritos/$userId');
     final resp = await _client.get(uri);
@@ -177,13 +187,11 @@ class SearchService {
     final decoded = json.decode(resp.body);
 
     if (decoded is! List) {
-      
       throw Exception(
         'Formato inesperado de favoritos: ${decoded.runtimeType}',
       );
     }
 
-    
     return decoded.map<String>((dynamic item) {
       if (item is Map<String, dynamic>) {
         final cafeteriaId =
@@ -194,7 +202,6 @@ class SearchService {
     }).toList();
   }
 
- 
   Future<void> addFavorito({
     required int userId,
     required String cafeteriaId,
@@ -223,7 +230,6 @@ class SearchService {
     }
   }
 
-  
   Future<void> removeFavorito({
     required int userId,
     required String cafeteriaId,

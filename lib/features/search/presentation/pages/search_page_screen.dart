@@ -8,19 +8,19 @@ import '../widgets/result_list_item.dart';
 import '../widgets/empty_state.dart';
 import 'cafe_detail_page.dart';
 
-// 1. DEFINIR EL CALLBACK (necesario para la comunicación con MainPage)
+
 typedef GuideSelectedCallback = void Function(String id, String name);
 
 class SearchPageScreen extends StatelessWidget {
 
   
-  // 2. AÑADIR EL CAMPO DEL CALLBACK
+  
   final GuideSelectedCallback onGuideSelected;
 
-  // 3. MODIFICAR EL CONSTRUCTOR (dejar de ser const y requerir el callback)
+  
   const SearchPageScreen({
     super.key,
-    required this.onGuideSelected, // Se usa para inicializar el campo de arriba
+    required this.onGuideSelected, 
     });
   
 
@@ -129,12 +129,9 @@ class SearchPageScreen extends StatelessWidget {
                                 isFavorite: vm.isFavorite(result.id),
                                 onFavoriteTap: () =>
                                     vm.toggleFavorite(result.id),
-                                // 4. LÓGICA DE NAVEGACIÓN CORREGIDA
+                                
                                 onTap: () async {
-                                  // Asumimos que quieres ver el detalle primero.
-                                  // Si quieres ir a la guía directamente, omite el Navigator.push
-                                  
-                                  // 4.1. Navegar a la página de detalle (OPCIONAL, si sigue siendo necesario)
+                                 
                                   final horario =
                                       await vm.getCafeteriaHorario(
                                           result.id);
@@ -150,7 +147,7 @@ class SearchPageScreen extends StatelessWidget {
                                         horario: horario, 
                                         calificaciones: calificaciones,
                                         
-                                        // PASANDO EL CALLBACK
+                                        
                                         onGuideSelected: onGuideSelected, 
                                       ),
                                     ),

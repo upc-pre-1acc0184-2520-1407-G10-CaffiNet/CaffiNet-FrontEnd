@@ -1,4 +1,3 @@
-
 import 'dart:convert';
 import 'dart:math' as math;
 
@@ -14,12 +13,11 @@ class HomePageViewModel extends ChangeNotifier {
   HomePageViewModel({http.Client? client}) : _client = client ?? http.Client();
 
   final http.Client _client;
-
   bool _isDisposed = false;
 
   @override
   void dispose() {
-    _isDisposed = true; 
+    _isDisposed = true;
     _client.close();
     super.dispose();
   }
@@ -61,7 +59,6 @@ class HomePageViewModel extends ChangeNotifier {
   /// ubicación actual del usuario (para el mapa de Nearby)
   LatLng? userLatLng;
 
- 
   Future<void> init() async {
     isLoading = true;
     errorMessage = null;
@@ -82,24 +79,27 @@ class HomePageViewModel extends ChangeNotifier {
     final pos = await _getCurrentPosition();
     userLatLng = LatLng(pos.latitude, pos.longitude);
 
-    // 2) Traer todas las cafeterías + calcular distancia real user–café
-    final allCafes = await _fetchCafeterias(userLatLng!);
+    // 2) Traer todas las cafeterías (sin rating todavía)
+    var allCafes = await _fetchCafeterias(userLatLng!);
 
     // 3) Ordenar por distancia (de más cerca a más lejos)
     allCafes.sort((a, b) => a.distanceKm.compareTo(b.distanceKm));
 
-    // 4) La más cercana para la sección "Nearby"
+    // 4) Calcular rating SOLO para las 10 más cercanas, en paralelo
+    allCafes = await _attachRatingsToNearest(allCafes, maxCafes: 10);
+
+    // 5) La más cercana para "Nearby Coffe Shopp"
     if (allCafes.isNotEmpty) {
       nearestItem = allCafes.first;
     }
 
-    // 5) Suggested for You:
-    //    3 cafeterías ALEATORIAS entre las 10 más cercanas
-    final candidates = allCafes.take(10).toList(); // hasta 10 más cercanas
+    // 6) Suggested for You: 3 aleatorias entre las 10 más cercanas
+    final candidates = allCafes.take(10).toList();
     candidates.shuffle();
-
     final count = candidates.length < 3 ? candidates.length : 3;
     suggestedItems = candidates.take(count).toList();
+
+    if (!_isDisposed) notifyListeners();
   }
 
   void retry() => init();
@@ -109,11 +109,12 @@ class HomePageViewModel extends ChangeNotifier {
     if (!_isDisposed) notifyListeners();
   }
 
- 
-  static const String _baseUrl = kIsWeb
-      ? 'http://127.0.0.1:8000'
-      : 'http://10.0.2.2:8000';
+  
 
+  static const String _baseUrl =
+      kIsWeb ? 'http://127.0.0.1:8000' : 'http://10.0.2.2:8000';
+
+  
   Future<List<HomeCafeItem>> _fetchCafeterias(LatLng user) async {
     final uri = Uri.parse('$_baseUrl/cafeterias/cafeterias/');
     final res = await _client.get(uri);
@@ -125,16 +126,15 @@ class HomePageViewModel extends ChangeNotifier {
     final List<dynamic> data = jsonDecode(res.body);
 
     final List<HomeCafeItem> result = [];
-    int i = 0;
 
     for (final raw in data) {
       final map = raw as Map<String, dynamic>;
 
-      
+      // Coordenadas
       final lat = _decodeLat(map['latitude'] as num);
       final lng = _decodeLng(map['longitude'] as num);
 
-      
+      // Distancia user–café
       final distanceKm = _distanceInKm(
         user.latitude,
         user.longitude,
@@ -142,21 +142,10 @@ class HomePageViewModel extends ChangeNotifier {
         lng,
       );
 
-      // Texto en millas 
+      // Texto en millas
       final distanceLabel = _formatDistanceMiles(distanceKm);
 
-      // Rating 
-      final rating =
-          (map['rating'] as num?)?.toDouble() ?? (3.5 + (i % 3) * 0.5);
-      final reviews = map['reviews'] as int? ?? (80 + i * 5);
-
-      final level = rating < 3.5
-          ? 'Bronze'
-          : rating < 4.3
-              ? 'Silver'
-              : 'Gold';
-
-      
+      // Tags
       final tags = _buildTagsFromRaw(map);
 
       result.add(
@@ -167,24 +156,105 @@ class HomePageViewModel extends ChangeNotifier {
           lng: lng,
           distanceKm: distanceKm,
           distanceLabel: distanceLabel,
-          rating: rating,
-          reviews: reviews,
-          level: level,
+          rating: 0.0, // provisional
+          reviews: 0,  // provisional
+          level: 'Bronze', // provisional, se recalcula luego
           tags: tags,
         ),
       );
-
-      i++;
     }
 
     return result;
   }
 
-  
+ 
+  Future<List<HomeCafeItem>> _attachRatingsToNearest(
+    List<HomeCafeItem> cafes, {
+    int maxCafes = 10,
+  }) async {
+    if (cafes.isEmpty) return cafes;
+
+    final subset = cafes.take(maxCafes).toList();
+
+    
+    final infos = await Future.wait(
+      subset.map((c) => _fetchRatingInfo(c.id)),
+    );
+
+    final Map<int, _RatingInfo> idToInfo = {};
+    for (var i = 0; i < subset.length; i++) {
+      idToInfo[subset[i].id] = infos[i];
+    }
+
+    // Devolvemos una nueva lista 
+    return cafes.map((c) {
+      final info = idToInfo[c.id];
+      if (info == null) return c;
+
+      final level = _levelFromRating(info.average);
+
+      return c.copyWith(
+        rating: info.average,
+        reviews: info.count,
+        level: level,
+      );
+    }).toList();
+  }
+
+  /// Calcula promedio y cantidad de reseñas de una cafetería
+  Future<_RatingInfo> _fetchRatingInfo(int cafeId) async {
+    try {
+      final uri = Uri.parse('$_baseUrl/calificaciones/$cafeId');
+      final res = await _client.get(uri);
+
+      if (res.statusCode != 200) {
+        return const _RatingInfo(0.0, 0);
+      }
+
+      final data = jsonDecode(res.body);
+      if (data is! List) {
+        return const _RatingInfo(0.0, 0);
+      }
+
+      double sum = 0.0;
+      int count = 0;
+
+      for (final item in data) {
+        if (item is! Map<String, dynamic>) continue;
+        final raw = item['rating'];
+        if (raw == null) continue;
+
+        double value;
+        if (raw is num) {
+          value = raw.toDouble();
+        } else {
+          value = double.tryParse(raw.toString()) ?? 0.0;
+        }
+
+        sum += value;
+        count++;
+      }
+
+      if (count == 0) {
+        return const _RatingInfo(0.0, 0);
+      }
+
+      return _RatingInfo(sum / count, count);
+    } catch (_) {
+      return const _RatingInfo(0.0, 0);
+    }
+  }
+
+  static String _levelFromRating(double rating) {
+    if (rating < 3.5) return 'Bronze';
+    if (rating < 4.3) return 'Silver';
+    return 'Gold';
+  }
+
   static List<String> _buildTagsFromRaw(Map<String, dynamic> raw) {
     final tags = <String>[];
 
-    
+   
     final dynamic rawTags = raw['tags'];
     if (rawTags is List) {
       for (final t in rawTags) {
@@ -218,7 +288,8 @@ class HomePageViewModel extends ChangeNotifier {
     return tags;
   }
 
-  
+  // UBICACIÓN 
+
   Future<Position> _getCurrentPosition() async {
     final serviceEnabled = await Geolocator.isLocationServiceEnabled();
     if (!serviceEnabled) {
@@ -245,6 +316,7 @@ class HomePageViewModel extends ChangeNotifier {
     );
   }
 
+  
 
   static double _decodeLat(num value) {
     final d = value.toDouble();
@@ -263,7 +335,6 @@ class HomePageViewModel extends ChangeNotifier {
     return d.clamp(-90.0, 90.0);
   }
 
-  
   static double _decodeLng(num value) {
     final d = value.toDouble();
 
@@ -281,7 +352,6 @@ class HomePageViewModel extends ChangeNotifier {
     return d.clamp(-180.0, 180.0);
   }
 
- 
   static double _distanceInKm(
     double lat1,
     double lon1,
@@ -310,3 +380,12 @@ class HomePageViewModel extends ChangeNotifier {
     return '${miles.toStringAsFixed(1)} mi';
   }
 }
+
+
+class _RatingInfo {
+  final double average;
+  final int count;
+
+  const _RatingInfo(this.average, this.count);
+}
+

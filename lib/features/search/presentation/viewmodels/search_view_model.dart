@@ -18,13 +18,12 @@ class SearchViewModel extends ChangeNotifier {
   // Lista completa de resultados
   final List<SearchResult> _all = [];
 
- 
   List<SearchResult> _page = [];
   bool _isSearching = false;
   int _nextIndex = 0;
   static const int _pageSize = 3;
 
-  // Ubicación del usuario 
+  // Ubicación del usuario
   Position? _userPosition;
   Position? get userPosition => _userPosition;
 
@@ -32,6 +31,9 @@ class SearchViewModel extends ChangeNotifier {
   final Set<String> _favoriteCafeteriaIds = {};
   bool _isLoadingFavorites = false;
   String? _favoritesError;
+
+  
+  final Map<String, _RatingInfo> _ratingCache = {};
 
   SearchFilters get filters => _filters;
   SortBy get sortBy => _sortBy;
@@ -45,14 +47,16 @@ class SearchViewModel extends ChangeNotifier {
   String? get favoritesError => _favoritesError;
 
   
-
+  // CARGA DE CAFETERÍAS
+ 
   Future<void> loadCafeterias() async {
     _isSearching = true;
     notifyListeners();
     try {
-     
+      // 1) Ubicación del usuario
       await _ensureUserLocation();
 
+      // 2) Traer cafeterías base
       final List<SearchResult> response =
           await _searchService.getCafeterias();
 
@@ -60,10 +64,10 @@ class SearchViewModel extends ChangeNotifier {
         ..clear()
         ..addAll(response);
 
-      
+      // 3) Actualizar distancia en millas
       _updateDistances();
 
-      
+      // 4) Construir primera página
       await search();
     } catch (e, st) {
       if (kDebugMode) {
@@ -76,13 +80,14 @@ class SearchViewModel extends ChangeNotifier {
     }
   }
 
-  // Pide permisos y obtiene la posición actual del usuario
+  
+  // UBICACIÓN
+  
   Future<void> _ensureUserLocation() async {
     if (_userPosition != null) return;
 
     bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
     if (!serviceEnabled) {
-      
       if (kDebugMode) {
         print('Servicio de ubicación desactivado.');
       }
@@ -107,17 +112,14 @@ class SearchViewModel extends ChangeNotifier {
       return;
     }
 
-   
     _userPosition = await Geolocator.getCurrentPosition(
       desiredAccuracy: LocationAccuracy.high,
     );
   }
 
-  
   void _updateDistances() {
     final pos = _userPosition;
     if (pos == null) {
-      
       return;
     }
 
@@ -150,15 +152,14 @@ class SearchViewModel extends ChangeNotifier {
     final c = 2 * atan2(sqrt(a), sqrt(1 - a));
     final distanceKm = earthRadiusKm * c;
 
-    
     return distanceKm * 0.621371;
   }
 
   double _degToRad(double deg) => deg * (pi / 180.0);
 
  
-  // Favoritos
- 
+  // FAVORITOS
+
   Future<void> loadFavorites() async {
     if (userId == null) return;
 
@@ -196,7 +197,6 @@ class SearchViewModel extends ChangeNotifier {
 
     final alreadyFavorite = _favoriteCafeteriaIds.contains(cafeteriaId);
 
-    
     if (alreadyFavorite) {
       _favoriteCafeteriaIds.remove(cafeteriaId);
     } else {
@@ -221,7 +221,7 @@ class SearchViewModel extends ChangeNotifier {
         print('Error al actualizar favorito: $e\n$st');
       }
 
-     
+      // revertimos si falló
       if (alreadyFavorite) {
         _favoriteCafeteriaIds.add(cafeteriaId);
       } else {
@@ -231,8 +231,9 @@ class SearchViewModel extends ChangeNotifier {
     }
   }
 
-
-
+ 
+  // BÚSQUEDA / FILTROS
+ 
   void onQueryChanged(String q) {
     _filters = _filters.copyWith(query: q);
     _resetAndSearch();
@@ -258,6 +259,9 @@ class SearchViewModel extends ChangeNotifier {
     _nextIndex = _page.length;
     _isSearching = false;
     notifyListeners();
+
+    
+    _loadPageRatings();
   }
 
   Future<void> loadMore() async {
@@ -270,6 +274,9 @@ class SearchViewModel extends ChangeNotifier {
     _nextIndex = end;
     _isSearching = false;
     notifyListeners();
+
+    
+    _loadPageRatings();
   }
 
   void clear() {
@@ -340,11 +347,110 @@ class SearchViewModel extends ChangeNotifier {
     return filtered;
   }
 
- 
+  
+  // RATINGS 
+  
+  Future<void> _loadPageRatings() async {
+    if (_page.isEmpty) return;
 
+   
+    final idsToFetch = <String>[];
+    for (final r in _page) {
+      if (!_ratingCache.containsKey(r.id)) {
+        idsToFetch.add(r.id);
+      }
+    }
+    if (idsToFetch.isEmpty) return;
+
+    try {
+      final futures = idsToFetch.map(
+        (id) => _searchService.getCafeteriaCalificaciones(id),
+      );
+      final responses = await Future.wait(futures);
+
+      for (var i = 0; i < idsToFetch.length; i++) {
+        final id = idsToFetch[i];
+        final list = responses[i];
+
+        double sum = 0.0;
+        int count = 0;
+
+        if (list is List) {
+          for (final cal in list) {
+            if (cal is! Map<String, dynamic>) continue;
+            final raw = cal['rating'];
+            if (raw == null) continue;
+
+            double value;
+            if (raw is num) {
+              value = raw.toDouble();
+            } else {
+              value = double.tryParse(raw.toString()) ?? 0.0;
+            }
+
+            sum += value;
+            count++;
+          }
+        }
+
+        final avg = count == 0 ? 0.0 : sum / count;
+        _ratingCache[id] = _RatingInfo(avg, count);
+      }
+
+   
+      for (var i = 0; i < _page.length; i++) {
+        final r = _page[i];
+        final info = _ratingCache[r.id];
+        if (info == null) continue;
+
+        final newTier = _tierFromRating(info.average);
+
+        _page[i] = r.copyWith(
+          rating: info.average,
+          ratingCount: info.count,
+          tier: newTier,
+        );
+
+       
+        final allIndex = _all.indexWhere((e) => e.id == r.id);
+        if (allIndex != -1) {
+          _all[allIndex] = _all[allIndex].copyWith(
+            rating: info.average,
+            ratingCount: info.count,
+            tier: newTier,
+          );
+        }
+      }
+
+      notifyListeners();
+    } catch (e, st) {
+      if (kDebugMode) {
+        print('Error al cargar ratings de la lista: $e\n$st');
+      }
+    }
+  }
+
+ 
+  CafeTier _tierFromRating(double rating) {
+    if (rating < 3.5) return CafeTier.bronze;
+    if (rating < 4.3) return CafeTier.silver;
+    return CafeTier.gold;
+  }
+
+  
+  // ENDPOINTS AUXILIARES
+ 
   Future<CafeteriaSchedule?> getCafeteriaHorario(String id) =>
       _searchService.getCafeteriaHorario(id);
 
   Future<List<dynamic>> getCafeteriaCalificaciones(String id) =>
       _searchService.getCafeteriaCalificaciones(id);
+}
+
+
+class _RatingInfo {
+  final double average;
+  final int count;
+
+  const _RatingInfo(this.average, this.count);
 }

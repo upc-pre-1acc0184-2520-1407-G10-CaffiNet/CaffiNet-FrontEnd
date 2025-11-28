@@ -6,7 +6,6 @@ import 'models/user_model.dart';
 import 'models/favorite_cafe_model.dart';
 
 class ProfileApiService {
-
   final String baseUrl;
 
   ProfileApiService({
@@ -50,18 +49,48 @@ class ProfileApiService {
     }
   }
 
+
   Future<List<FavoriteCafeModel>> getFavoritos(int userId) async {
+    
     final resp = await http.get(_uri('/favoritos/$userId'));
 
-    if (resp.statusCode == 200) {
-      final data = jsonDecode(resp.body);
-
-      final List<dynamic> rawList = data is List ? data : [];
-      return rawList
-          .map((e) => FavoriteCafeModel.fromJson(e as Map<String, dynamic>))
-          .toList();
-    } else {
+    if (resp.statusCode != 200) {
       throw Exception('Error al obtener favoritos: ${resp.statusCode}');
     }
+
+    final data = jsonDecode(resp.body);
+    final List<dynamic> rawList = data is List ? data : [];
+
+    final List<FavoriteCafeModel> favoritos = [];
+
+    
+    for (final fav in rawList) {
+      if (fav is! Map<String, dynamic>) continue;
+
+      final dynamic rawCafeId = fav['cafeteria_id'] ?? fav['id_cafeteria'];
+      if (rawCafeId == null) continue;
+
+      final int cafeId = rawCafeId is int
+          ? rawCafeId
+          : int.tryParse(rawCafeId.toString()) ?? 0;
+
+      if (cafeId == 0) continue;
+
+      
+      final cafeResp =
+          await http.get(_uri('/cafeterias/cafeterias/$cafeId'));
+
+      if (cafeResp.statusCode != 200) {
+        
+        continue;
+      }
+
+      final cafeJson = jsonDecode(cafeResp.body);
+      if (cafeJson is Map<String, dynamic>) {
+        favoritos.add(FavoriteCafeModel.fromJson(cafeJson));
+      }
+    }
+
+    return favoritos;
   }
 }

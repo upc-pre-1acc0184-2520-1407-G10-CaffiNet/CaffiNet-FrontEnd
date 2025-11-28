@@ -1,11 +1,9 @@
-
 import 'package:flutter/material.dart';
-
 
 class PopularTag {
   final IconData icon;
   final String name;
-  final String filterKey; 
+  final String filterKey;
 
   const PopularTag({
     required this.icon,
@@ -14,32 +12,23 @@ class PopularTag {
   });
 }
 
-
 class HomeCafeItem {
   final int id;
   final String name;
 
- 
   final double lat;
   final double lng;
 
-
   final double distanceKm;
-
- 
   final String distanceLabel;
 
-  
   final double rating;
   final int reviews;
 
-  
   final String level;
-
 
   final List<String> tags;
 
-  
   final String? imageUrl;
 
   const HomeCafeItem({
@@ -55,4 +44,25 @@ class HomeCafeItem {
     required this.tags,
     this.imageUrl,
   });
+
+  
+  HomeCafeItem copyWith({
+    double? rating,
+    int? reviews,
+    String? level,
+  }) {
+    return HomeCafeItem(
+      id: id,
+      name: name,
+      lat: lat,
+      lng: lng,
+      distanceKm: distanceKm,
+      distanceLabel: distanceLabel,
+      rating: rating ?? this.rating,
+      reviews: reviews ?? this.reviews,
+      level: level ?? this.level,
+      tags: tags,
+      imageUrl: imageUrl,
+    );
+  }
 }
