@@ -13,5 +13,9 @@
 // 3️⃣ Usar 127.0.0.1 en localhost, úsalo si estás probando en un entorno web.
 //     Ya sea entorno Chrome o Edge.
 
+// const String BASE_URL = 'http://127.0.0.1:8000';
 
-const String BASE_URL = 'http://localhost:8000';
+// const String BASE_URL = 'https://caffinet-backend.onrender.com';
+
+
+const String BASE_URL = 'https://caffinet-backend.onrender.com';
