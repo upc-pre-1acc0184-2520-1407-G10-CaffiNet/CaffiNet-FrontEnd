@@ -7,15 +7,14 @@ import 'package:persistent_bottom_nav_bar/persistent_bottom_nav_bar.dart';
 import 'package:caffinet_app_flutter/features/search/presentation/pages/search_page_screen.dart';
 import 'package:caffinet_app_flutter/features/profile/presentation/pages/profile_page.dart';
 import 'package:caffinet_app_flutter/features/discover/presentation/pages/discover_page.dart';
-import 'package:caffinet_app_flutter/features/discover/domain/usecases/get_optimal_route_usecase.dart'; 
-
+import 'package:caffinet_app_flutter/features/discover/domain/usecases/get_optimal_route_usecase.dart';
 
 class MainPage extends StatefulWidget {
   final int userId;
 
   const MainPage({
     super.key,
-    required this.userId, 
+    required this.userId,
   });
 
   @override
@@ -26,7 +25,7 @@ class _MainPageState extends State<MainPage> {
   late PersistentTabController _controller;
   String? _selectedCafeteriaId;
   String? _selectedCafeteriaName;
-  
+
   @override
   void initState() {
     super.initState();
@@ -35,7 +34,7 @@ class _MainPageState extends State<MainPage> {
 
   void _goToSearchTab() {
     setState(() {
-      _controller.jumpToTab(1); 
+      _controller.jumpToTab(1); // pestaña Search
     });
   }
 
@@ -43,7 +42,7 @@ class _MainPageState extends State<MainPage> {
     setState(() {
       _selectedCafeteriaId = id;
       _selectedCafeteriaName = name;
-      _controller.jumpToTab(2); 
+      _controller.jumpToTab(2); // pestaña Guide
     });
   }
 
@@ -51,22 +50,30 @@ class _MainPageState extends State<MainPage> {
     // ACCESO LIMPIO A GETIT (sl)
     final getOptimalRouteUseCase = sl<GetOptimalRouteUseCase>();
     final osrmService = sl<OSRMService>();
-    
+
     return [
       HomePageScreen(
         onGoToSearch: _goToSearchTab,
-        onGuideSelected: _updateSelectedGuide 
+        onGuideSelected: _updateSelectedGuide,
+        userId: widget.userId,
       ), // Index 0
 
-      SearchPageScreen(onGuideSelected: _updateSelectedGuide), // Index 1
       
+      SearchPageScreen(
+        onGuideSelected: _updateSelectedGuide,
+        userId: widget.userId,
+      ), // Index 1
+
       GuidePage(
-        cafeteriaId: _selectedCafeteriaId, 
+        cafeteriaId: _selectedCafeteriaId,
         cafeteriaName: _selectedCafeteriaName,
       ), // Index 2
-      
+
       // INYECCIÓN DE DEPENDENCIA LIMPIA EN DISCOVERPAGE
-      DiscoverPage(getOptimalRoute: getOptimalRouteUseCase,osrmService: osrmService ), // Index 3
+      DiscoverPage(
+        getOptimalRoute: getOptimalRouteUseCase,
+        osrmService: osrmService,
+      ), // Index 3
 
       ProfilePage(usuarioId: widget.userId), // Index 4
     ];

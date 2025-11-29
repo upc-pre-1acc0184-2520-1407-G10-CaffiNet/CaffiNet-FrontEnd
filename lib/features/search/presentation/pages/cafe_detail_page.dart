@@ -1,15 +1,12 @@
 import 'dart:convert';
 
-import 'package:caffinet_app_flutter/features/guide/presentation/pages/guide_page.dart';
 import 'package:caffinet_app_flutter/features/search/presentation/pages/search_page_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:http/http.dart' as http;
 import 'package:latlong2/latlong.dart' as latlng;
-import 'package:provider/provider.dart';
 
 import '../../models/search_models.dart';
-import '../viewmodels/search_view_model.dart';
 import 'cafe_menu_section.dart';
 
 class CafeDetailPage extends StatefulWidget {
@@ -18,12 +15,16 @@ class CafeDetailPage extends StatefulWidget {
   final List<dynamic> calificaciones;
   final GuideSelectedCallback onGuideSelected;
 
+  /// ID del usuario actualmente logeado
+  final int userId;
+
   const CafeDetailPage({
     super.key,
     required this.result,
     this.horario,
     this.calificaciones = const [],
     required this.onGuideSelected,
+    required this.userId,
   });
 
   @override
@@ -38,7 +39,7 @@ class _CafeDetailPageState extends State<CafeDetailPage> {
   bool _sendingRating = false;
   String? _errorMessage;
 
-  int? _myRating;           // rating del usuario actual 
+  int? _myRating; // rating del usuario actual
   double _averageRating = 0.0;
   int _ratingCount = 0;
 
@@ -48,22 +49,12 @@ class _CafeDetailPageState extends State<CafeDetailPage> {
 
     _calificaciones = List<dynamic>.from(widget.calificaciones);
     _updateSummaryFromCalificaciones();
-
+    _detectMyRating();
     _loadRatingsFromApi();
   }
 
+  // ----------------- RATING HELPERS -----------------
 
-  int _resolveUserId() {
-    try {
-      final vm = context.read<SearchViewModel>();
-      if (vm.userId != null) return vm.userId!;
-    } catch (_) {
-      
-    }
-    return 1;
-  }
-
-  
   void _updateSummaryFromCalificaciones() {
     if (_calificaciones.isEmpty) {
       _averageRating = 0.0;
@@ -100,17 +91,15 @@ class _CafeDetailPageState extends State<CafeDetailPage> {
   }
 
   /// Detecta si el usuario actual ya tiene una calificación en la lista
-
   void _detectMyRating() {
-    final userId = _resolveUserId();
+    final userId = widget.userId;
 
     int? found;
     for (final cal in _calificaciones) {
       if (cal is Map && cal['usuario_id'] != null) {
         final rawUser = cal['usuario_id'];
-        final int calUserId = rawUser is int
-            ? rawUser
-            : int.tryParse(rawUser.toString()) ?? -1;
+        final int calUserId =
+            rawUser is int ? rawUser : int.tryParse(rawUser.toString()) ?? -1;
 
         if (calUserId == userId) {
           final rawRating = cal['rating'];
@@ -178,12 +167,12 @@ class _CafeDetailPageState extends State<CafeDetailPage> {
       return;
     }
 
-    final int userId = _resolveUserId();
+    final int userId = widget.userId;
 
     setState(() {
       _sendingRating = true;
       _errorMessage = null;
-      _myRating = value; 
+      _myRating = value; // marcamos inmediatamente en UI
     });
 
     try {
@@ -204,7 +193,7 @@ class _CafeDetailPageState extends State<CafeDetailPage> {
               'Error al guardar la calificación (${response.statusCode})';
         });
       } else {
-        
+        // Recargamos para actualizar promedio y lista
         await _loadRatingsFromApi();
       }
     } catch (e) {
@@ -217,6 +206,8 @@ class _CafeDetailPageState extends State<CafeDetailPage> {
       });
     }
   }
+
+  // ----------------- UI -----------------
 
   @override
   Widget build(BuildContext context) {
@@ -250,7 +241,7 @@ class _CafeDetailPageState extends State<CafeDetailPage> {
       body: ListView(
         padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
         children: [
-          // Card principal
+          // -------- Card principal ----------
           Card(
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(16),
@@ -384,7 +375,7 @@ class _CafeDetailPageState extends State<CafeDetailPage> {
 
           const SizedBox(height: 16),
 
-          // Descripción
+          // -------- Descripción ----------
           Text(
             'Description',
             style: Theme.of(context).textTheme.titleMedium,
@@ -430,7 +421,7 @@ class _CafeDetailPageState extends State<CafeDetailPage> {
 
           const SizedBox(height: 16),
 
-          // Mapa
+          // -------- Mapa ----------
           Text('Map', style: Theme.of(context).textTheme.titleMedium),
           const SizedBox(height: 8),
 
@@ -493,7 +484,7 @@ class _CafeDetailPageState extends State<CafeDetailPage> {
 
           const SizedBox(height: 16),
 
-          // Calificaciones
+          // -------- Calificaciones ----------
           Text('Ratings', style: Theme.of(context).textTheme.titleMedium),
           const SizedBox(height: 8),
 

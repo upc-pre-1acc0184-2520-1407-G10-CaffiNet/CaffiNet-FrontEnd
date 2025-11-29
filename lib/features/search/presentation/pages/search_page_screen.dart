@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+
 import '../viewmodels/search_view_model.dart';
 import '../../models/search_models.dart';
 import '../widgets/search_input.dart';
@@ -8,29 +9,27 @@ import '../widgets/result_list_item.dart';
 import '../widgets/empty_state.dart';
 import 'cafe_detail_page.dart';
 
-
 typedef GuideSelectedCallback = void Function(String id, String name);
 
 class SearchPageScreen extends StatelessWidget {
-
-  
-  
+  /// Callback cuando se selecciona una guía en el detalle
   final GuideSelectedCallback onGuideSelected;
 
-  
+  /// ID del usuario actualmente logeado
+  final int userId;
+
   const SearchPageScreen({
     super.key,
-    required this.onGuideSelected, 
-    });
-  
+    required this.onGuideSelected,
+    required this.userId,
+  });
 
   @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider(
-      create: (_) =>
-          SearchViewModel(userId: 1)
-            ..loadCafeterias()
-            ..loadFavorites(),
+      create: (_) => SearchViewModel(userId: userId)
+        ..loadCafeterias()
+        ..loadFavorites(),
       child: Scaffold(
         appBar: AppBar(
           title: const Text('Search Results'),
@@ -48,6 +47,7 @@ class SearchPageScreen extends StatelessWidget {
             return Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                // Buscador 
                 Padding(
                   padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
                   child: SearchInput(
@@ -61,6 +61,7 @@ class SearchPageScreen extends StatelessWidget {
                   ),
                 ),
 
+                // Header resultados + orden 
                 Padding(
                   padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
                   child: Row(
@@ -79,11 +80,17 @@ class SearchPageScreen extends StatelessWidget {
                         underline: const SizedBox.shrink(),
                         items: const [
                           DropdownMenuItem(
-                              value: SortBy.rating, child: Text('Rating')),
+                            value: SortBy.rating,
+                            child: Text('Rating'),
+                          ),
                           DropdownMenuItem(
-                              value: SortBy.distance, child: Text('Distance')),
+                            value: SortBy.distance,
+                            child: Text('Distance'),
+                          ),
                           DropdownMenuItem(
-                              value: SortBy.name, child: Text('Name')),
+                            value: SortBy.name,
+                            child: Text('Name'),
+                          ),
                         ],
                         onChanged: (s) => vm.setSort(s ?? SortBy.rating),
                       ),
@@ -91,6 +98,7 @@ class SearchPageScreen extends StatelessWidget {
                   ),
                 ),
 
+                // filtros rápidos
                 Padding(
                   padding: const EdgeInsets.only(left: 12, bottom: 8),
                   child: FilterChipRow(
@@ -100,7 +108,7 @@ class SearchPageScreen extends StatelessWidget {
                       'Reservations',
                       'Gourmet',
                       'Parking Available',
-                      'Music'
+                      'Music',
                     ],
                     selected: vm.filters.selectedTags.toList(),
                     onTap: (t) => vm.toggleTag(t),
@@ -109,6 +117,7 @@ class SearchPageScreen extends StatelessWidget {
 
                 if (vm.isSearching) const LinearProgressIndicator(),
 
+                // Lista de resultados 
                 Expanded(
                   child: vm.results.isEmpty
                       ? const EmptyState(
@@ -122,48 +131,38 @@ class SearchPageScreen extends StatelessWidget {
                           separatorBuilder: (_, __) =>
                               const SizedBox(height: 10),
                           itemBuilder: (context, i) {
+                            // Ítems de cafeterías
                             if (i < vm.results.length) {
                               final result = vm.results[i];
+
                               return ResultListItem(
                                 result: result,
                                 isFavorite: vm.isFavorite(result.id),
                                 onFavoriteTap: () =>
                                     vm.toggleFavorite(result.id),
-                                
                                 onTap: () async {
-                                 
-                                  final horario =
-                                      await vm.getCafeteriaHorario(
-                                          result.id);
-                                  final calificaciones =
-                                      await vm.getCafeteriaCalificaciones(
-                                          result.id);
-                                  
+                                  final horario = await vm
+                                      .getCafeteriaHorario(result.id);
+                                  final calificaciones = await vm
+                                      .getCafeteriaCalificaciones(result.id);
+
                                   await Navigator.push(
                                     context,
                                     MaterialPageRoute(
                                       builder: (context) => CafeDetailPage(
-                                        result: result, 
-                                        horario: horario, 
+                                        result: result,
+                                        horario: horario,
                                         calificaciones: calificaciones,
-                                        
-                                        
-                                        onGuideSelected: onGuideSelected, 
+                                        onGuideSelected: onGuideSelected,
+                                        userId: vm.userId ?? userId,
                                       ),
                                     ),
                                   );
-
-                                  return Center(
-                                    child: TextButton(
-                                      onPressed: vm.loadMore,
-                                      child: const Text('Load more results'),
-                                    ),
-                                  );
-                                  
                                 },
                               );
                             }
-                            
+
+                            // Botón "Load more" al final
                             return Center(
                               child: TextButton(
                                 onPressed: vm.loadMore,
@@ -208,7 +207,7 @@ class SearchPageScreen extends StatelessWidget {
       'Specialty',
       'Wide',
       'Traditional',
-      'Pet-friendly'
+      'Pet-friendly',
     ];
 
     showModalBottomSheet(
@@ -219,6 +218,7 @@ class SearchPageScreen extends StatelessWidget {
       ),
       builder: (_) {
         final selected = Set<String>.from(vm.filters.selectedTags);
+
         return Padding(
           padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
           child: StatefulBuilder(
@@ -264,6 +264,7 @@ class SearchPageScreen extends StatelessWidget {
                     width: double.infinity,
                     child: FilledButton(
                       onPressed: () {
+                        
                         for (final t in vm.filters.selectedTags.toList()) {
                           if (!selected.contains(t)) vm.toggleTag(t);
                         }

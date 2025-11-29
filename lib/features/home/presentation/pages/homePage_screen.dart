@@ -1,4 +1,3 @@
-
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:persistent_bottom_nav_bar/persistent_bottom_nav_bar.dart';
@@ -8,24 +7,26 @@ import 'homrPage_view_model.dart';
 import '../../models/home_ui_models.dart';
 import '../widgets/cafe_big_card.dart';
 
-
 import 'package:caffinet_app_flutter/features/search/models/search_models.dart';
 import 'package:caffinet_app_flutter/features/search/presentation/pages/search_page_screen.dart';
 import 'package:caffinet_app_flutter/features/search/presentation/pages/cafe_detail_page.dart';
-
 
 typedef GuideSelectedCallback = void Function(String id, String name);
 
 class HomePageScreen extends StatelessWidget {
   final VoidCallback? onGoToSearch;
   final GuideSelectedCallback onGuideSelected;
-  
+
+  /// ID del usuario logeado
+  final int userId;
+
   const HomePageScreen({
-    this.onGoToSearch, 
+    this.onGoToSearch,
     required this.onGuideSelected,
+    required this.userId,
     super.key,
   });
-  
+
   @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider(
@@ -62,7 +63,8 @@ class HomePageScreen extends StatelessWidget {
                 slivers: [
                   SliverToBoxAdapter(child: _Header()),
                   const SliverToBoxAdapter(child: SizedBox(height: 16)),
-                  
+
+                  // Popular Tags
                   const SliverToBoxAdapter(
                     child: Padding(
                       padding: EdgeInsets.symmetric(horizontal: 16),
@@ -75,14 +77,14 @@ class HomePageScreen extends StatelessWidget {
                       child: _PopularTags(vm: vm),
                     ),
                   ),
-                  
+
+                  // Suggested
                   SliverToBoxAdapter(
                     child: Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 16),
                       child: _SectionHeader(
                         title: 'Suggested for You',
                         actionText: 'See all',
-                        
                         onTap: onGoToSearch,
                       ),
                     ),
@@ -96,20 +98,21 @@ class HomePageScreen extends StatelessWidget {
                     ),
                   ),
                   const SliverToBoxAdapter(child: SizedBox(height: 16)),
-                 
+
+                  // Nearby
                   SliverToBoxAdapter(
                     child: Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 16),
                       child: _SectionHeader(
                         title: 'Nearby Coffe Shopp',
                         actionText: 'View all',
-                        
                         onTap: vm.nearestItem == null
                             ? null
                             : () => _goToNearbyDetail(
                                   context,
                                   vm.nearestItem!,
                                   onGuideSelected,
+                                  userId, 
                                 ),
                       ),
                     ),
@@ -132,13 +135,15 @@ class HomePageScreen extends StatelessWidget {
     );
   }
 
-
-
  
-  static void _goToNearbyDetail(BuildContext context, HomeCafeItem item,GuideSelectedCallback onGuideSelected,) {
+  static void _goToNearbyDetail(
+    BuildContext context,
+    HomeCafeItem item,
+    GuideSelectedCallback onGuideSelected,
+    int userId,
+  ) {
     final tier = _tierFromLabel(item.level);
 
-    
     final searchResult = SearchResult(
       id: item.id.toString(),
       name: item.name,
@@ -147,7 +152,7 @@ class HomePageScreen extends StatelessWidget {
       ratingCount: item.reviews,
       distanceMi: item.distanceKm * 0.621371,
       tags: item.tags,
-      status: OpenStatus.open,
+      status: OpenStatus.open, 
       tier: tier,
       thumbnail: null,
       petFriendly: item.tags.contains('Pet Friendly'),
@@ -163,14 +168,14 @@ class HomePageScreen extends StatelessWidget {
       longitude: item.lng,
     );
 
-   
     PersistentNavBarNavigator.pushNewScreen(
       context,
       screen: CafeDetailPage(
         result: searchResult,
-        horario: null,          
-        calificaciones: const [], 
+        horario: null,
+        calificaciones: const [],
         onGuideSelected: onGuideSelected,
+        userId: userId,
       ),
       withNavBar: true,
       pageTransitionAnimation: PageTransitionAnimation.cupertino,
@@ -189,8 +194,6 @@ class HomePageScreen extends StatelessWidget {
     }
   }
 }
-
-
 
 class _Header extends StatelessWidget {
   @override
@@ -308,7 +311,8 @@ class _PopularTags extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final HomePageScreen homePage = context.findAncestorWidgetOfExactType<HomePageScreen>()!;
+    final HomePageScreen homePage =
+        context.findAncestorWidgetOfExactType<HomePageScreen>()!;
     return SizedBox(
       height: 84,
       child: ListView.separated(
@@ -335,8 +339,7 @@ class _PopularTags extends StatelessWidget {
                     : const Color(0xFFEFF6FF),
                 borderRadius: BorderRadius.circular(16),
                 border: Border.all(
-                  color:
-                      isSelected ? cs.primary : const Color(0xFFE5E7EB),
+                  color: isSelected ? cs.primary : const Color(0xFFE5E7EB),
                   width: 1.2,
                 ),
               ),

@@ -2,11 +2,9 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 
-
 const String _baseUrl = 'http://127.0.0.1:8000';
 
 class CafeMenuSection extends StatefulWidget {
-  
   final String cafeteriaId;
 
   const CafeMenuSection({
@@ -34,7 +32,7 @@ class _CafeMenuSectionState extends State<CafeMenuSection> {
   bool _showProducts = true;
 
   Future<void> _onTogglePressed() async {
-    
+    // Si la carta está cerrada y todavía no hay datos, cargamos del backend
     if (!_isOpen && _beverages.isEmpty && _products.isEmpty) {
       await _loadMenu();
     }
@@ -69,11 +67,19 @@ class _CafeMenuSectionState extends State<CafeMenuSection> {
 
       _beverages
         ..clear()
-        ..addAll(bebidasJson.map((e) => _BeverageItem.fromJson(e)));
+        ..addAll(
+          bebidasJson
+              .whereType<Map<String, dynamic>>()
+              .map((e) => _BeverageItem.fromJson(e)),
+        );
 
       _products
         ..clear()
-        ..addAll(productosJson.map((e) => _ProductItem.fromJson(e)));
+        ..addAll(
+          productosJson
+              .whereType<Map<String, dynamic>>()
+              .map((e) => _ProductItem.fromJson(e)),
+        );
 
       _applySorting();
     } catch (e) {
@@ -136,8 +142,7 @@ class _CafeMenuSectionState extends State<CafeMenuSection> {
   Widget _buildMenuContent(BuildContext context) {
     final theme = Theme.of(context);
 
-    final bool hasAnyItem =
-        _beverages.isNotEmpty || _products.isNotEmpty;
+    final bool hasAnyItem = _beverages.isNotEmpty || _products.isNotEmpty;
 
     if (!hasAnyItem) {
       return const Padding(
@@ -149,7 +154,7 @@ class _CafeMenuSectionState extends State<CafeMenuSection> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        // Título + Sort by: Precio
+        // Título + Sort por precio
         Row(
           children: [
             Text(
@@ -186,7 +191,7 @@ class _CafeMenuSectionState extends State<CafeMenuSection> {
         ),
         const SizedBox(height: 8),
 
-        // Etiquetas solo Bebidas / Productos
+        // Chips Bebidas / Productos
         Wrap(
           spacing: 8,
           children: [
@@ -251,7 +256,7 @@ class _CafeMenuSectionState extends State<CafeMenuSection> {
   }
 }
 
-/// MODELOS 
+/* MODELOS & UTILIDADES  */
 
 double _parsePrice(dynamic raw) {
   if (raw == null) return 0;
@@ -276,13 +281,27 @@ class _BeverageItem {
   });
 
   factory _BeverageItem.fromJson(Map<String, dynamic> json) {
+    final rawName =
+        json['Bebida'] ?? json['bebida'] ?? json['nombre_bebida'] ?? json['nombre'];
+
+    final rawSize = json['Tamaño'] ??
+        json['tamano'] ??
+        json['tamaño'] ??
+        json['size'];
+
+    final rawMilk = json['Leche'] ?? json['leche'] ?? json['tipo_leche'];
+
+    final rawCategory =
+        json['Categoria'] ?? json['categoria'] ?? json['category'];
+
+    final rawPrice = json['precio'] ?? json['Precio'] ?? json['price'];
+
     return _BeverageItem(
-      name: json['Bebida']?.toString() ?? '',
-      size: json['Tamaño']?.toString() ?? '',
-      milk: json['Leche']?.toString() ?? '',
-      category:
-          json['Categoria']?.toString() ?? json['categoria']?.toString() ?? '',
-      price: _parsePrice(json['precio']),
+      name: rawName?.toString() ?? '',
+      size: rawSize?.toString() ?? '',
+      milk: rawMilk?.toString() ?? '',
+      category: rawCategory?.toString() ?? '',
+      price: _parsePrice(rawPrice),
     );
   }
 }
@@ -301,16 +320,26 @@ class _ProductItem {
   });
 
   factory _ProductItem.fromJson(Map<String, dynamic> json) {
+    final rawName =
+        json['nombre_producto'] ?? json['producto'] ?? json['nombre'];
+
+    final rawType = json['tipo'] ?? json['category'] ?? '';
+
+    final rawCategory =
+        json['categoria'] ?? json['Categoria'] ?? json['category'];
+
+    final rawPrice = json['precio'] ?? json['Precio'] ?? json['price'];
+
     return _ProductItem(
-      name: json['nombre_producto']?.toString() ?? '',
-      type: json['tipo']?.toString() ?? '',
-      category: json['categoria']?.toString() ?? '',
-      price: _parsePrice(json['precio']),
+      name: rawName?.toString() ?? '',
+      type: rawType?.toString() ?? '',
+      category: rawCategory?.toString() ?? '',
+      price: _parsePrice(rawPrice),
     );
   }
 }
 
-/// CARD 
+/* CARD */
 
 class _MenuCard extends StatelessWidget {
   final String title;
@@ -389,3 +418,4 @@ class _MenuCard extends StatelessWidget {
     );
   }
 }
+
