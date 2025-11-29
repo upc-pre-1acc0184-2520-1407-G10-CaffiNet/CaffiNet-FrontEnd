@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:caffinet_app_flutter/core/session/session_manager.dart';
 
 import '../../data/profile_api_service.dart';
 import '../../data/models/user_model.dart';
@@ -127,12 +128,17 @@ class _ProfilePageState extends State<ProfilePage> {
     );
   }
 
- 
-  void _logout() async {
-    await _viewModel.loadUser(); 
-    if (mounted) {
-      _mostrarSnackBar('Perfil recargado');
-    }
+  //  Logout 
+   void _logout() async {
+    // 1. Limpiar datos de sesión local 
+    await SessionManager.clearSession();
+
+    // 2. Navegar al login 
+    if (!mounted) return;
+    Navigator.of(context, rootNavigator: true).pushNamedAndRemoveUntil(
+      '/login',
+      (route) => false,
+    );
   }
 
   Future<void> _mostrarDialogEditarPerfil() async {
@@ -237,7 +243,6 @@ class _ProfilePageState extends State<ProfilePage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              
               SizedBox(
                 height: 40,
                 child: Stack(
@@ -288,7 +293,6 @@ class _ProfilePageState extends State<ProfilePage> {
 
               const SizedBox(height: 40),
 
-             
               Center(
                 child: CircleAvatar(
                   radius: 60,
@@ -303,7 +307,6 @@ class _ProfilePageState extends State<ProfilePage> {
 
               const SizedBox(height: 24),
 
-              
               Center(
                 child: Column(
                   children: [
@@ -344,7 +347,6 @@ class _ProfilePageState extends State<ProfilePage> {
 
               const SizedBox(height: 36),
 
-              
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
