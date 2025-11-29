@@ -23,7 +23,7 @@ class DiscoverPage extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Descubre la Ruta Óptima 🧭'),
-        backgroundColor: Colors.blueGrey,
+        backgroundColor: Colors.white,
       ),
       // 1. Inyección de Dependencia: Provee el BLoC a todos los widgets hijos
       body: BlocProvider(

@@ -1,10 +1,4 @@
-// lib/features/discover/domain/usecases/get_optimal_route_usecase.dart
 
-import '../entities/optimal_route_result.dart';
-import '../repositories/discover_repository.dart';
-
-/// Clase que encapsula todas las preferencias y la ubicación del usuario
-/// necesarias para el cálculo de la ruta.
 class RoutePreferences {
   final String algorithm; // Ej: 'Dijkstra', 'Floyd-Warshall'
   final double userLat;
@@ -18,5 +12,22 @@ class RoutePreferences {
     required this.userLng,
     required this.filters,
   });
+  RoutePreferences copyWith({
+    String? algorithm,
+    double? userLat,
+    double? userLng,
+    Map<String, dynamic>? filters,
+  }) {
+    return RoutePreferences(
+      // Si el valor pasado no es null, lo usa. Si es null, usa el valor actual (this.algorithm).
+      algorithm: algorithm ?? this.algorithm,
+      userLat: userLat ?? this.userLat,
+      userLng: userLng ?? this.userLng,
+      
+      // Mantiene el mapa existente si no se proporciona uno nuevo.
+      filters: filters ?? this.filters, 
+    );
+  }
+
 }
 

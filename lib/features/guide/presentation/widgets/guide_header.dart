@@ -34,7 +34,6 @@ class GuideHeader extends StatelessWidget {
           Row(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              // El icono de ubicación inicial y la flecha han sido eliminados.
               Expanded( 
                 // Expanded asegura que la columna ocupe todo el ancho disponible.
                 child: Column(
@@ -55,7 +54,7 @@ class GuideHeader extends StatelessWidget {
                   ],
                 ),
               ),
-              // FLECHA DE DIRECCIÓN ELIMINADA DE AQUÍ
+
             ],
           ),
         ],
@@ -82,7 +81,6 @@ class LocationField extends StatelessWidget {
     const Color backgroundGray = Color(0xFFF9FAFB);
 
     return Container(
-      // 📐 IMPORTANTE: Añadir width: double.infinity para que ocupe todo el ancho
       width: double.infinity, 
       height: 30,
       padding: const EdgeInsets.symmetric(horizontal: 8),
@@ -94,7 +92,6 @@ class LocationField extends StatelessWidget {
         ),
       ),
       child: Row(
-        // Removimos mainAxisSize.min para permitir que el texto se expanda
         mainAxisAlignment: MainAxisAlignment.start,
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [

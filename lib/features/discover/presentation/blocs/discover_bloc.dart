@@ -6,13 +6,24 @@ import 'discover_event.dart';
 import 'discover_state.dart';
 import 'package:latlong2/latlong.dart';
 
+const Distance distance = Distance();
+
 class DiscoverBloc extends Bloc<DiscoverEvent, DiscoverState> {
   final GetOptimalRouteUseCase getOptimalRoute;
-  final OSRMService osrmService; // SE AÑADE EL SERVICIO OSRM
+  final OSRMService osrmService; 
+  
+  // 💡 NUEVO: Almacenamiento persistente de las últimas preferencias válidas
+  RoutePreferences _lastSuccessfulPreferences = RoutePreferences(
+    algorithm: 'Dijkstra',
+    userLat: 0.0,
+    userLng: 0.0,
+    filters: {},
+  );
+
 
   DiscoverBloc({
     required this.getOptimalRoute,
-    required this.osrmService, // SE AÑADE LA INYECCIÓN
+    required this.osrmService,
   })
       : super(
             DiscoverInitial(
@@ -26,66 +37,149 @@ class DiscoverBloc extends Bloc<DiscoverEvent, DiscoverState> {
         ) {
     on<PreferencesUpdated>(_onPreferencesUpdated);
     on<CalculateOptimalRoute>(_onCalculateOptimalRoute);
+    on<RetrieveLastPreferences>(_onRetrieveLastPreferences);
+    on<CountryChanged>(_onCountryChanged);
   }
 
   // --- Handlers de Eventos ---
+
+  // 💡 NUEVO HANDLER: Permite a la UI obtener las últimas preferencias usadas (para el caso de éxito)
+  void _onRetrieveLastPreferences(
+    RetrieveLastPreferences event,
+    Emitter<DiscoverState> emit,
+  ) {
+    emit(DiscoverInitial(currentPreferences: _lastSuccessfulPreferences));
+  }
+
 
   void _onPreferencesUpdated(
     PreferencesUpdated event,
     Emitter<DiscoverState> emit,
   ) {
+    // 1. Obtener las preferencias actuales (sean del estado inicial o de la última ejecución)
     final currentState = state;
-    final currentPreferences = currentState is DiscoverInitial
-        ? currentState.currentPreferences
-        : RoutePreferences(algorithm: event.selectedAlgorithm, userLat: 0.0, userLng: 0.0, filters: {});
+    RoutePreferences basePreferences;
+    
+    if (currentState is DiscoverInitial) {
+      basePreferences = currentState.currentPreferences;
+    } else {
+      // Usamos las últimas preferencias exitosas si no estamos en estado inicial
+      basePreferences = _lastSuccessfulPreferences;
+    }
 
+
+    // 2. Fusionar las preferencias: Mantiene la ubicación y fusiona filtros/algoritmo
     final updatedPreferences = RoutePreferences(
+      // 💡 Se mantiene la ubicación de basePreferences (que incluye la última ubicación exitosa)
+      userLat: basePreferences.userLat,
+      userLng: basePreferences.userLng, 
+      
+      // 💡 Toma el nuevo algoritmo y los nuevos filtros del evento
       algorithm: event.selectedAlgorithm,
-      userLat: currentPreferences.userLat,
-      userLng: currentPreferences.userLng,
-      filters: event.currentFilters,
+      filters: event.currentFilters.isNotEmpty ? event.currentFilters : basePreferences.filters,
+
     );
 
+    // 3. Emite el estado inicial con las preferencias actualizadas
     emit(DiscoverInitial(currentPreferences: updatedPreferences));
   }
 
+
+  void _onCountryChanged(
+    CountryChanged event,
+    Emitter<DiscoverState> emit,
+  ) {
+    const defaultAlgorithm = 'Dijkstra';
+    
+    // Coordenadas fijas de Plaza de Bolívar, Bogotá, si es Colombia
+    final double lat = (event.newCountryCode == 'CO') ? 4.59806 : 0.0;
+    final double lng = (event.newCountryCode == 'CO') ? -74.07609 : 0.0;
+
+    // Reiniciamos las preferencias. Los filtros se vacían, y la ubicación se establece
+    // en 0.0 para Perú (será actualizada por Geolocator) o fija para Colombia.
+    final updatedPreferences = RoutePreferences(
+      algorithm: defaultAlgorithm,
+      userLat: lat,
+      userLng: lng,
+      filters: {}, // Se limpian los filtros al cambiar de país
+    );
+
+    // Reiniciamos también el estado de persistencia
+    _lastSuccessfulPreferences = updatedPreferences;
+
+    // Emitimos el estado inicial para que la UI se resetee y muestre los filtros
+    emit(DiscoverInitial(currentPreferences: updatedPreferences));
+  }
+  
   void _onCalculateOptimalRoute(
     CalculateOptimalRoute event,
     Emitter<DiscoverState> emit,
   ) async {
-    final currentPreferences = state is DiscoverInitial
-        ? (state as DiscoverInitial).currentPreferences
-        : RoutePreferences(algorithm: 'Dijkstra', userLat: 0.0, userLng: 0.0, filters: {});
+    // 1. Tomar las preferencias del estado actual (que ya tienen el algoritmo y filtros)
+    final RoutePreferences currentPreferences = state is DiscoverInitial
+      ? (state as DiscoverInitial).currentPreferences
+      : _lastSuccessfulPreferences; // Fallback
 
     emit(DiscoverLoading());
 
     try {
-      final preferences = RoutePreferences(
-        algorithm: currentPreferences.algorithm,
+      // 2. Crear las preferencias finales para el cálculo, añadiendo la ubicación del evento
+      final preferences = currentPreferences.copyWith(
         userLat: event.userLat,
         userLng: event.userLng,
-        filters: currentPreferences.filters,
       );
 
-      // 1. Llamada al Backend (Usecase)
-      final optimalResult = await getOptimalRoute(preferences); // Devuelve OptimalRouteResult
+      // 3. Guardar las preferencias finales en la variable persistente antes del cálculo
+      _lastSuccessfulPreferences = preferences;
 
-      // 2. Extraer los puntos de las cafeterías (nodos)
+      // 4. Llamada al Backend (Usecase)
+      final optimalResult = await getOptimalRoute(preferences); 
+
+
+      // ------------------------------------------------------------------
+      // 💡 NUEVA VALIDACIÓN DE REGLAS DE NEGOCIO
+      // ------------------------------------------------------------------
+      
+      // Regla 1: Verificar si hay cafeterías en la ruta
+      if (optimalResult.orderedCafeterias.isEmpty) {
+        emit(DiscoverError(message: '❌ No se encontraron cafeterías con los parámetros seleccionados. Intenta ampliar tus filtros o radio de búsqueda.'));
+        return;
+      }
+
+      // Regla 2: Verificar que la primera cafetería no esté excesivamente lejos (ej. más de 15 km)
+      final userLocation = LatLng(preferences.userLat, preferences.userLng);
+      final firstCafe = optimalResult.orderedCafeterias.first;
+      final firstCafeLocation = LatLng(firstCafe.latitude, firstCafe.longitude);
+      
+      // Calcula la distancia en metros, luego convierte a kilómetros
+      final double distanceMeters = distance(userLocation, firstCafeLocation); 
+      final double distanceKm = distanceMeters / 1000.0;
+      
+      const double maxDistanceKm = 15.0; // Distancia máxima aceptable
+      
+      if (distanceKm > maxDistanceKm) {
+        final distanceFormatted = distanceKm.toStringAsFixed(1);
+        emit(DiscoverError(message: '⚠️ La cafetería más cercana encontrada está a $distanceFormatted km. Esto sugiere que no hay resultados relevantes cerca de tu ubicación o que el filtro es demasiado restrictivo.'));
+        return;
+      }
+
+      // ------------------------------------------------------------------
+
+      // 5. Extraer y llamar a OSRM para la geometría
       final List<LatLng> cafePoints = optimalResult.orderedCafeterias
           .map((c) => LatLng(c.latitude, c.longitude))
           .toList();
 
-      // 3. 🌐 Llamada al Servicio OSRM para obtener la geometría curva
       final realRoutePoints = await osrmService.getRealRoutePolyline(cafePoints);
 
-      // 4. ✅ Emitir Éxito con los puntos de ruta enriquecidos (curvos)
-      // Usamos copyWith para añadir los puntos de ruta real.
+      // 6. Emitir Éxito con los puntos de ruta enriquecidos
       final finalResult = optimalResult.copyWith(realRoutePoints: realRoutePoints);
 
-      emit(DiscoverSuccess(result: finalResult));
+      // 7. 💡 ¡CORRECCIÓN CRÍTICA!
+      // El estado de éxito ahora lleva la copia de las preferencias usadas.
+      emit(DiscoverSuccess(result: finalResult, currentPreferences: preferences));
 
     } catch (e) {
-      // Manejo de excepción que incluye errores de red y OSRM
       emit(DiscoverError(message: 'Error al calcular la ruta: ${e.toString()}'));
     }
   }

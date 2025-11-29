@@ -1,9 +1,7 @@
 
-
 abstract class DiscoverEvent {}
 
 /// Evento disparado cuando el usuario interactúa con los filtros o selecciona el algoritmo.
-/// Este evento actualiza temporalmente las preferencias antes del cálculo final.
 class PreferencesUpdated extends DiscoverEvent {
   final Map<String, dynamic> currentFilters;
   final String selectedAlgorithm;
@@ -23,4 +21,13 @@ class CalculateOptimalRoute extends DiscoverEvent {
     required this.userLat,
     required this.userLng,
   });
+}
+
+/// 💡 NUEVO Evento para solicitar las últimas preferencias válidas.
+class RetrieveLastPreferences extends DiscoverEvent {}
+
+class CountryChanged extends DiscoverEvent {
+  final String newCountryCode; // 'PE' o 'CO'
+
+  CountryChanged({required this.newCountryCode});
 }
