@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:caffinet_app_flutter/core/constants.dart';
 import 'package:caffinet_app_flutter/features/search/presentation/pages/search_page_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
@@ -32,7 +33,7 @@ class CafeDetailPage extends StatefulWidget {
 }
 
 class _CafeDetailPageState extends State<CafeDetailPage> {
-  final String _baseUrl = 'http://127.0.0.1:8000';
+  final String _baseUrl = BASE_URL;
 
   List<dynamic> _calificaciones = [];
   bool _loadingRatings = false;

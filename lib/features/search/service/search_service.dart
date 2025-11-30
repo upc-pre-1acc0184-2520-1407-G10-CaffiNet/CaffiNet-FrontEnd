@@ -1,9 +1,10 @@
 import 'dart:convert';
+import 'package:caffinet_app_flutter/core/constants.dart';
 import 'package:http/http.dart' as http;
 import '../../search/models/search_models.dart';
 
 class SearchService {
-  static const String baseUrl = 'http://127.0.0.1:8000';
+  static const String baseUrl = BASE_URL;
 
   final http.Client _client = http.Client();
 

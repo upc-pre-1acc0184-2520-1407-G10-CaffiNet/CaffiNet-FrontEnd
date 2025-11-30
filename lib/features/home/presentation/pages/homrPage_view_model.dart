@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:math' as math;
 
+import 'package:caffinet_app_flutter/core/constants.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:geolocator/geolocator.dart';
@@ -111,8 +112,7 @@ class HomePageViewModel extends ChangeNotifier {
 
   
 
-  static const String _baseUrl =
-      kIsWeb ? 'http://127.0.0.1:8000' : 'http://10.0.2.2:8000';
+  static const String _baseUrl = BASE_URL;
 
   
   Future<List<HomeCafeItem>> _fetchCafeterias(LatLng user) async {

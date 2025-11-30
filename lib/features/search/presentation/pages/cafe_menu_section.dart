@@ -1,8 +1,9 @@
 import 'dart:convert';
+import 'package:caffinet_app_flutter/core/constants.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 
-const String _baseUrl = 'http://127.0.0.1:8000';
+const String _baseUrl = BASE_URL;
 
 class CafeMenuSection extends StatefulWidget {
   final String cafeteriaId;

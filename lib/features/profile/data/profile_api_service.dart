@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:caffinet_app_flutter/core/constants.dart';
 import 'package:http/http.dart' as http;
 
 import 'models/user_model.dart';
@@ -9,7 +10,7 @@ class ProfileApiService {
   final String baseUrl;
 
   ProfileApiService({
-    this.baseUrl = 'http://127.0.0.1:8000', 
+    this.baseUrl = BASE_URL, 
   });
 
   Uri _uri(String path) => Uri.parse('$baseUrl$path');
