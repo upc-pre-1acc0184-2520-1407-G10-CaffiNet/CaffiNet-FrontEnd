@@ -19,3 +19,5 @@ class GetGuideDataEvent extends GuideEvent {
   @override
   List<Object> get props => [cafeteriaId];
 }
+
+class ResetGuideEvent extends GuideEvent {}

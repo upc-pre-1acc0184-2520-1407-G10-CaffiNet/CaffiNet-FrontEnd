@@ -10,6 +10,7 @@ class GuideBloc extends Bloc<GuideEvent, GuideState> {
 
   GuideBloc({required this.getGuideData}) : super(GuideInitial()) {
     on<GetGuideDataEvent>(_onGetGuideData);
+    on<ResetGuideEvent>(_onResetGuide);
   }
 
   void _onGetGuideData(
@@ -34,4 +35,12 @@ class GuideBloc extends Bloc<GuideEvent, GuideState> {
       emit(const GuideError('No se pudo cargar la información de la guía. Verifica la conexión y los permisos de ubicación.'));
     }
   }
+
+  void _onResetGuide(
+    ResetGuideEvent event,
+    Emitter<GuideState> emit,
+  ) {
+    emit(GuideInitial());
+  }
+  
 }

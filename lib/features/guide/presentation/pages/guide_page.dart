@@ -8,104 +8,137 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../widgets/guide_header.dart';
 import '../widgets/guide_map_widget.dart';
 
-class GuidePage extends StatelessWidget {
-    // ⚠️ CAMBIO 1: Hacemos los parámetros ANULABLES (String?)
-    final String? cafeteriaId; 
-    final String? cafeteriaName; 
+// 1. Convertimos a StatefulWidget para tener ciclo de vida
+class GuidePage extends StatefulWidget {
+  final String? cafeteriaId;
+  final String? cafeteriaName;
 
-    const GuidePage({
-        this.cafeteriaId, // Ya no son 'required'
-        this.cafeteriaName, // Ya no son 'required'
-        super.key,
-    });
+  const GuidePage({
+    this.cafeteriaId,
+    this.cafeteriaName,
+    super.key,
+  });
 
-    @override
-    Widget build(BuildContext context) {
-        // ⚠️ CAMBIO 2: Lógica condicional para verificar si hay datos
-        final bool isGuideReady = cafeteriaId != null && cafeteriaName != null;
+  @override
+  State<GuidePage> createState() => _GuidePageState();
+}
 
-        if (!isGuideReady) {
-            // Si falta el ID o el Nombre, mostramos el mensaje de placeholder.
-            return Scaffold(
-                appBar: AppBar(
-                    title: const Text('Guía de Navegación'),
-                ),
-                body: const Center(
-                    child: Padding(
-                        padding: EdgeInsets.all(32.0),
-                        child: Text(
-                            "Selecciona una cafetería para mostrar su guía :p",
-                            textAlign: TextAlign.center,
-                            style: TextStyle(
-                                fontSize: 20,
-                                fontWeight: FontWeight.bold,
-                                color: Color(0xFF6B7280),
-                            ),
-                        ),
-                    ),
-                ),
-            );
-        }
-        
-        // Si hay datos (isGuideReady == true), continuamos con la lógica normal del BLoC
-        // Usamos el operador '!' para asegurar al compilador que los valores no son nulos aquí.
-        return BlocProvider(
-            create: (context) => sl<GuideBloc>()
-                ..add(GetGuideDataEvent(cafeteriaId!)), // Usamos '!' aquí
-            child: Scaffold(
-                appBar: AppBar(
-                    title: const Text('Guía de Navegación'),
-                ),
-                body: SafeArea(
-                    child: BlocBuilder<GuideBloc, GuideState>(
-                        builder: (context, state) {
-                            
-                            // ... (Manejo de estados de carga, error y Loaded)
-                            // La lógica de estado es la misma que la anterior, pero con el '!'
-                            
-                            if (state is GuideLoading) {
-                                // Mostramos un encabezado provisional mientras carga
-                                return Column(
-                                    children: [
-                                        GuideHeader(
-                                            cafeteriaName: cafeteriaName!,
-                                            userLocationName: 'Cargando ubicación...',
-                                        ),
-                                        const Expanded(child: Center(child: CircularProgressIndicator())),
-                                    ],
-                                );
-                            }
-                            if (state is GuideError) {
-                                return Center(child: Text('Error: ${state.message}'));
-                            }
+class _GuidePageState extends State<GuidePage> {
+  // Guardamos la referencia del Bloc aquí
+  late GuideBloc _guideBloc;
 
-                            if (state is GuideLoaded) {
-                                final currentCafeteria = state.cafeteria;
-                                final currentUserLocation = state.userLocation;
-                                final currentUserLocationName = state.userLocationName;
-
-                                return Column(
-                                    children: [
-                                        GuideHeader(
-                                            cafeteriaName: currentCafeteria.name,
-                                            userLocationName: currentUserLocationName,
-                                        ),
-                                        Expanded(
-                                            child: GuideMapWidget(
-                                                cafeteria: currentCafeteria,
-                                                userLocation: currentUserLocation,
-                                            ),
-                                        ),
-                                    ],
-                                );
-                            }
-
-                            // Fallback (debería ser inaccesible si isGuideReady es true)
-                            return const SizedBox.shrink(); 
-                        },
-                    ),
-                ),
-            ),
-        );
+  @override
+  void initState() {
+    super.initState();
+    // 2. Inicializamos el Bloc manualmente
+    _guideBloc = sl<GuideBloc>();
+    
+    // Si hay ID al entrar, cargamos la data
+    if (widget.cafeteriaId != null) {
+      _guideBloc.add(GetGuideDataEvent(widget.cafeteriaId!));
     }
+  }
+
+  // 3. ESTA ES LA CLAVE: Detectamos cambios en los parámetros
+  @override
+  void didUpdateWidget(covariant GuidePage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    
+    // Si el ID cambió (por ejemplo, seleccionaste otra opción en el search)
+    // y el nuevo ID no es nulo, disparamos el evento de nuevo.
+    if (widget.cafeteriaId != oldWidget.cafeteriaId && widget.cafeteriaId != null) {
+       _guideBloc.add(GetGuideDataEvent(widget.cafeteriaId!));
+    }
+  }
+
+  @override
+  void dispose() {
+    // 4. Cerramos el Bloc manualmente al salir de la pantalla
+    _guideBloc.close();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    // 5. Usamos BlocProvider.value porque nosotros creamos el Bloc en initState
+    return BlocProvider.value(
+      value: _guideBloc,
+      child: Scaffold(
+        appBar: AppBar(
+          title: const Text('Guía de Navegación'),
+        ),
+        body: SafeArea(
+          child: BlocBuilder<GuideBloc, GuideState>(
+            builder: (context, state) {
+              
+              if (state is GuideInitial) {
+                return const _PlaceholderView();
+              }
+
+              if (state is GuideLoading) {
+                return Column(
+                  children: [
+                    GuideHeader(
+                      cafeteriaName: widget.cafeteriaName ?? 'Cargando...',
+                      userLocationName: 'Cargando ubicación...',
+                    ),
+                    const Expanded(child: Center(child: CircularProgressIndicator())),
+                  ],
+                );
+              }
+
+              if (state is GuideError) {
+                return Center(child: Text('Error: ${state.message}'));
+              }
+
+              if (state is GuideLoaded) {
+                return Column(
+                  children: [
+                    GuideHeader(
+                      cafeteriaName: state.cafeteria.name,
+                      userLocationName: state.userLocationName,
+                      onDismiss: () {
+                        // Reseteamos el BLoC
+                        _guideBloc.add(ResetGuideEvent());
+                      },
+                    ),
+                    Expanded(
+                      child: GuideMapWidget(
+                        cafeteria: state.cafeteria,
+                        userLocation: state.userLocation,
+                      ),
+                    ),
+                  ],
+                );
+              }
+
+              return const _PlaceholderView();
+            },
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _PlaceholderView extends StatelessWidget {
+  const _PlaceholderView();
+
+  @override
+  Widget build(BuildContext context) {
+    return const Center(
+      child: Padding(
+        padding: EdgeInsets.all(32.0),
+        child: Text(
+          "Selecciona una cafetería para mostrar su guía :p",
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+            color: Color(0xFF6B7280),
+          ),
+        ),
+      ),
+    );
+  }
 }

@@ -7,10 +7,13 @@ class GuideHeader extends StatelessWidget {
   final String cafeteriaName;
   // Campo nuevo para mostrar la ubicación detectada por el sistema
   final String userLocationName; 
+
+  final VoidCallback? onDismiss;
   
   const GuideHeader({
     required this.cafeteriaName, 
     required this.userLocationName, // Requerido para la ubicación actual
+    this.onDismiss,
     super.key
   }); 
 
@@ -54,7 +57,15 @@ class GuideHeader extends StatelessWidget {
                   ],
                 ),
               ),
-
+              // --- BOTÓN DE CERRAR ---
+              if (onDismiss != null) ...[
+                const SizedBox(width: 8),
+                IconButton(
+                  onPressed: onDismiss,
+                  icon: const Icon(Icons.close, color: Colors.redAccent),
+                  tooltip: "Cerrar navegación",
+                )
+              ]
             ],
           ),
         ],
