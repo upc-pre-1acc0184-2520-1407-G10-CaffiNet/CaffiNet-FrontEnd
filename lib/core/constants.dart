@@ -24,4 +24,4 @@
 // const String BASE_URL = 'https://caffinet-backend.onrender.com';
 
 
-const String BASE_URL = 'http://localhost:8000';
+const String BASE_URL = 'https://caffinet-backend.onrender.com';
